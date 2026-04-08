@@ -4,18 +4,18 @@
 {% block content %}
 <section class="hero">
   <div>
-    <div class="eyebrow">Leads in Echtzeit</div>
-    <h1>Inbox für neue Anfragen</h1>
-    <p>Alle eingehenden Gespräche, Rückrufe und manuell zu prüfenden Fälle in einer klaren Arbeitsansicht.</p>
+    <div class="eyebrow">Real-Time Leads</div>
+    <h1>Inbox for New Leads</h1>
+    <p>All incoming calls, callbacks, and manually reviewable cases in one clear workflow view.</p>
   </div>
 </section>
 
-<div id="anfragen-content"
+<div id="leads-content"
      hx-ext="sse"
      sse-connect="/sse/anfragen"
      hx-get="/partial/anfragen{% if active_filter or query %}?{% if active_filter %}status={{ active_filter|urlencode }}{% endif %}{% if active_filter and query %}&{% endif %}{% if query %}q={{ query|urlencode }}{% endif %}{% endif %}"
      hx-trigger="sse:refresh"
-     hx-target="#anfragen-content"
+     hx-target="#leads-content"
      hx-swap="outerHTML">
   {% include "partial_anfragen.html" %}
 </div>

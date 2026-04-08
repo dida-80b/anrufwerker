@@ -1,21 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Einstellungen — Anrufwerker{% endblock %}
+{% block title %}Settings — Anrufwerker{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div>
     <div class="eyebrow">Admin</div>
-    <h1>Einstellungen</h1>
-    <p>Sprache, Modellparameter, Prompts und Extraktion.</p>
+    <h1>Settings</h1>
+    <p>Language, model parameters, prompts, and extraction.</p>
   </div>
 </section>
 
 {% if saved %}
-<div class="alert success">Gespeichert. Änderungen greifen beim nächsten Worker-/Call-Zyklus.</div>
+<div class="alert success">Saved. Changes apply on the next worker or call cycle.</div>
 {% endif %}
 
 {% if not settings %}
-<div class="alert warning">Settings-Tabelle noch leer — wird beim ersten Worker-Start initialisiert.</div>
+<div class="alert warning">The settings table is still empty and will be initialized on the first worker start.</div>
 {% endif %}
 
 <form method="post" action="/admin/settings" class="section-grid">
@@ -23,7 +23,7 @@
     {% for section in sections %}
     <a href="#{{ section.id }}">{{ section.title }}</a>
     {% endfor %}
-    <button type="submit">Speichern</button>
+    <button type="submit">Save</button>
   </aside>
 
   <div>

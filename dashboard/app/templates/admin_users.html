@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Benutzer — Anrufwerker{% endblock %}
+{% block title %}Users — Anrufwerker{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div>
     <div class="eyebrow">Admin</div>
-    <h1>Benutzer & Rechte</h1>
-    <p>Rollenmodell mit Admin, User und Viewer. Neue Passwörter erzwingen beim ersten Login eine Änderung.</p>
+    <h1>Users & Access</h1>
+    <p>Role model with Admin, User, and Viewer. New passwords force a change on first login.</p>
   </div>
 </section>
 
 {% if saved %}
-<div class="alert success">Benutzerverwaltung aktualisiert.</div>
+<div class="alert success">User management updated.</div>
 {% endif %}
 {% if error %}
 <div class="alert error">{{ error }}</div>
@@ -19,7 +19,7 @@
 
 <div class="detail-grid" style="margin-bottom:20px;">
   <article>
-    <h3>Neuen Benutzer anlegen</h3>
+    <h3>Create User</h3>
     <form method="post" action="/admin/users" class="layout-grid">
       <div class="field-grid" style="margin-bottom:12px;">
         <div class="field">
@@ -27,11 +27,11 @@
           <input type="text" name="display_name" autocomplete="off">
         </div>
         <div class="field">
-          <label>E-Mail</label>
+          <label>Email</label>
           <input type="email" name="email" autocomplete="off">
         </div>
         <div class="field">
-          <label>Rolle</label>
+          <label>Role</label>
           <select name="role">
             {% for value, label in role_options %}
             <option value="{{ value }}">{{ label }}</option>
@@ -39,37 +39,37 @@
           </select>
         </div>
         <div class="field">
-          <label>Initiales Passwort</label>
+          <label>Initial Password</label>
           <input type="text" name="password" value="{{ default_password }}" autocomplete="off">
         </div>
       </div>
-      <div><button type="submit">Benutzer anlegen</button></div>
+      <div><button type="submit">Create User</button></div>
     </form>
   </article>
 
   <article>
-    <h3>Rollenmodell</h3>
+    <h3>Role Model</h3>
     <div class="field-grid">
-      <div class="field"><label>Admin</label><div>Voller Zugriff auf Benutzer, Einstellungen und Leads.</div></div>
-      <div class="field"><label>User</label><div>Darf Inbox lesen und Leads bearbeiten.</div></div>
-      <div class="field"><label>Viewer</label><div>Nur Lesezugriff für Büro oder Reporting.</div></div>
-      <div class="field"><label>Passwort-Policy</label><div>Zurückgesetzte Accounts müssen ihr Passwort beim ersten Login ändern.</div></div>
+      <div class="field"><label>Admin</label><div>Full access to users, settings, and leads.</div></div>
+      <div class="field"><label>User</label><div>Can read the inbox and update leads.</div></div>
+      <div class="field"><label>Viewer</label><div>Read-only access for office or reporting users.</div></div>
+      <div class="field"><label>Password Policy</label><div>Reset accounts must change their password on first login.</div></div>
     </div>
   </article>
 </div>
 
 <article>
-  <h3>Bestehende Benutzer ({{ users | length }})</h3>
+  <h3>Existing Users ({{ users | length }})</h3>
   <div class="table-shell">
     <table class="user-table">
       <thead>
         <tr>
-          <th>Benutzer</th>
-          <th>Rolle</th>
+          <th>User</th>
+          <th>Role</th>
           <th>Status</th>
-          <th>Letzter Login</th>
-          <th>Rolle ändern</th>
-          <th>Passwort / Aktiv</th>
+          <th>Last Login</th>
+          <th>Change Role</th>
+          <th>Password / Active</th>
         </tr>
       </thead>
       <tbody>
@@ -86,12 +86,12 @@
           </td>
           <td>
             {% if user.is_active %}
-            <span class="badge" data-color="green">Aktiv</span>
+            <span class="badge" data-color="green">Active</span>
             {% else %}
-            <span class="badge" data-color="red">Inaktiv</span>
+            <span class="badge" data-color="red">Inactive</span>
             {% endif %}
             {% if user.must_change_password %}
-            <div class="lead-sub" style="margin-top:4px;">PW-Wechsel offen</div>
+            <div class="lead-sub" style="margin-top:4px;">Password change required</div>
             {% endif %}
           </td>
           <td class="mono">{{ user.last_login_fmt }}</td>
@@ -113,7 +113,7 @@
               </form>
               <form method="post" action="/admin/users/{{ user.id }}/toggle">
                 <button type="submit" class="{% if user.is_active %}danger{% else %}secondary{% endif %}">
-                  {% if user.is_active %}Sperren{% else %}Aktivieren{% endif %}
+                  {% if user.is_active %}Disable{% else %}Enable{% endif %}
                 </button>
               </form>
             </div>

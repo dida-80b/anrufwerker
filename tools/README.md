@@ -1,18 +1,18 @@
 # Training Data Generator
 
-Generiert synthetische Telefongespräche für QLoRA Fine-Tuning.
-8 Handwerksbetriebe × 31 Szenarien, zufällig kombiniert.
+Generates synthetic phone conversations for QLoRA fine-tuning.
+8 trade businesses × 31 scenarios, combined at random.
 
-## Starten
+## Run
 
 ```bash
 
 python3 tools/generate_training_data.py --count 1000 --output tools/training_data.jsonl
 ```
 
-Strg+C bricht sauber ab — bereits generierte Daten bleiben erhalten.
+Press `Ctrl+C` to stop gracefully. Already generated data is kept.
 
-## Aufräumen (nach 2-3 Tagen)
+## Cleanup (after 2-3 days)
 
 ```bash
 rm tools/generate_training_data.py tools/training_data.jsonl tools/README.md
@@ -20,7 +20,7 @@ rm tools/generate_training_data.py tools/training_data.jsonl tools/README.md
 
 ## Output-Format
 
-JSONL, ein Gespräch pro Zeile, direkt für QLoRA nutzbar:
+JSONL, one conversation per line, ready for QLoRA:
 ```json
 {"messages": [{"role": "system", ...}, {"role": "assistant", ...}, {"role": "user", ...}, ...]}
 ```

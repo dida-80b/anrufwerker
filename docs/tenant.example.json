@@ -1,11 +1,11 @@
 {
-  "company_name": "Muster Handwerksbetrieb GmbH",
-  "owner_name": "Max Mustermann",
+  "company_name": "Sample Trade Services Ltd.",
+  "owner_name": "Alex Sample",
   "phone_callback": "089000000000",
   "company_since": "1990",
-  "company_address": "Musterstraße 1, 80000 Musterstadt",
-  "employee_count": "ca. 8 Mitarbeiter",
-  "language_default": "de",
+  "company_address": "1 Sample Street, 80000 Sampletown",
+  "employee_count": "about 8 employees",
+  "language_default": "en",
 
   "bot_can": [
     "anfrage_aufnehmen",
@@ -19,23 +19,23 @@
     "rechtliches"
   ],
 
-  "escalation_message": "Herr Mustermann ruft Sie zurück.",
+  "escalation_message": "Alex Sample will call you back.",
 
   "emergency_number": null,
 
-  "greeting": "Guten Tag, Sie sind verbunden mit dem Muster Handwerksbetrieb. Ich bin die Telefon KI. Was kann ich für Sie tun?",
+  "greeting": "Hello, you have reached Sample Trade Services. I am the AI phone assistant. How can I help you?",
 
   "services": [
-    "Innenrenovierung",
-    "Außenanstrich",
-    "Tapezieren",
-    "Fassadenreinigung",
-    "Verputzarbeiten"
+    "interior renovation",
+    "exterior painting",
+    "wallpapering",
+    "facade cleaning",
+    "plaster work"
   ],
 
-  "opening_hours": "Montag bis Freitag, sieben bis siebzehn Uhr",
+  "opening_hours": "Monday to Friday, seven a.m. to five p.m.",
 
   "bot_can_custom": {
-    "anfrage_aufnehmen": "Anfrage aufnehmen in dieser Reihenfolge: 1. Vollständigen Namen erfragen. 2. Adresse/Ort erfragen und Postleitzahl bestätigen. 3. Kurzes Anliegen aufnehmen (was soll gemacht werden). 4. Rückruf ankündigen: 'Darf ich Sie später unter der Nummer [ANRUFER-NUMMER] zurückrufen um Termine zur Baubegehung abzuklären?' — bei Ablehnung korrekte Nummer aufnehmen. 5. Abschließen: 'Ich gebe das weiter und wir melden uns.' KEIN Wunschtermin erfragen."
+    "anfrage_aufnehmen": "Capture the request in this order: 1. Ask for the full name. 2. Ask for the address or city and confirm the postal code. 3. Capture a short description of the request. 4. Confirm the callback: 'May we call you back later at [CALLER_NUMBER] to discuss next steps?' If that number is wrong, collect and repeat the correct one. 5. Close with: 'I will pass this on and we will get back to you.' Do NOT ask for a preferred appointment time."
   }
 }
