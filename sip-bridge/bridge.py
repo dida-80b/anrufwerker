@@ -257,7 +257,7 @@ async def ari_websocket_listener():
     """
     ws_url = (
         f"ws://{ASTERISK_HOST}:{ASTERISK_ARI_PORT}/ari/events"
-        f"?app=openclaw-bridge&subscribeAll=true"
+        f"?app=anrufwerker-bridge&subscribeAll=true"
     )
     while True:
         try:
@@ -325,7 +325,7 @@ async def startup():
         host="0.0.0.0",
         port=AUDIOSOCKET_PORT,
         whisper_url=WHISPER_URL,
-        openclaw_callback=stream_response,
+        llm_callback=stream_response,
         tts_voice=TTS_VOICE,
         sounds_dir=SOUNDS_DIR,
         transcripts_dir=TRANSCRIPTS_PATH,
