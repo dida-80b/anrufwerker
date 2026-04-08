@@ -11,7 +11,7 @@ DASHBOARD_DSN = os.getenv("DASHBOARD_DSN", "/app/data/dashboard.db")
 
 SETTINGS_DEFAULTS = {
     "llm_url": ("OLLAMA_URL", "http://host.docker.internal:11434/api/chat", "Ollama URL (Telefon-KI)"),
-    "llm_model": ("OLLAMA_MODEL", "qwen3.5-tel:latest", "Ollama Modell für Telefonie"),
+    "llm_model": ("OLLAMA_MODEL", "ministral-3:14b-instruct-2512-q8_0", "Ollama Modell für Telefonie"),
     "llm_temperature": ("OLLAMA_TEMPERATURE", "0.1", "Temperature (0.0–1.0)"),
     "llm_top_p": ("OLLAMA_TOP_P", "0.85", "Top-P (0.0–1.0)"),
     "llm_num_predict": ("OLLAMA_NUM_PREDICT", "80", "Max. Tokens pro Antwort"),

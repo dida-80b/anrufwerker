@@ -88,7 +88,7 @@ services:
       - OPENCLAW_CHAT_TOKEN=${OPENCLAW_CHAT_TOKEN:-}
       - OLLAMA_DIRECT=${OLLAMA_DIRECT:-false}
       - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434/api/chat}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-ministral-3:14b-instruct-2512-q8_0}
       - INACTIVITY_TIMEOUT=${INACTIVITY_TIMEOUT:-90}
       - CHECKIN_TIMEOUT=${CHECKIN_TIMEOUT:-10}
       - FAST_STT_MODEL=${FAST_STT_MODEL:-small}
@@ -129,7 +129,7 @@ services:
       - QUEUE_DSN=/app/data/queue.db
       - DASHBOARD_DSN=/app/data/dashboard.db
       - OLLAMA_URL=${OLLAMA_URL:-http://127.0.0.1:11434/api/chat}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-ministral-3:14b-instruct-2512-q8_0}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - POLL_INTERVAL_SECONDS=${POLL_INTERVAL_SECONDS:-10}
     restart: unless-stopped

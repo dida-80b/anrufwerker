@@ -19,7 +19,7 @@ Funktionierender Demo-System mit Basisfähigkeiten.
 
 - [ ] Asterisk-Anbindung (SIP/RTP)
 - [ ] STT (Faster-Whisper)
-- [ ] Intent Detection (qwen2.5:7b via Host-Ollama)
+- [ ] Intent Detection (ministral-3:14b-instruct-2512-q8_0 via Host-Ollama)
 - [ ] Kurze Text-Antworten generieren
 - [ ] TTS (Piper)
 - [ ] SQLite Queue

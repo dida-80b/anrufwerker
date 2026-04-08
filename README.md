@@ -46,7 +46,7 @@ cp .env.example .env
 # .env anpassen: Asterisk-Zugangsdaten, Ollama-Modell, Piper-Voice
 
 # 3. LLM-Modell auf dem Host laden
-ollama pull qwen2.5:7b
+ollama pull ministral-3:14b-instruct-2512-q8_0
 
 # 4. Piper-Voices herunterladen (Beispiel: Thorsten Deutsch)
 mkdir -p data/piper-voices
@@ -108,7 +108,7 @@ TTS_VOICE=de-DE-SeraphinaMultilingualNeural
 | `TTS_ENGINE` | TTS-Engine (`piper` oder `edge`) | `piper` |
 | `PIPER_VOICE` | Piper-Stimme | `de_DE-thorsten-high` |
 | `OLLAMA_URL` | Ollama-Adresse | `http://host.docker.internal:11434/api/chat` |
-| `OLLAMA_MODEL` | LLM-Modell | `qwen2.5:7b` |
+| `OLLAMA_MODEL` | LLM-Modell | `ministral-3:14b-instruct-2512-q8_0` |
 | `WHISPER_URL` | Whisper HTTP-Endpunkt | `http://127.0.0.1:8090` |
 | `STT_ENGINE` | STT-Engine | `whisper-http` |
 | `INBOUND_ENABLED` | Eingehende Anrufe aktivieren | `true` |
