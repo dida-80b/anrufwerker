@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
     email           TEXT NOT NULL,
     display_name    TEXT NOT NULL,
     password_hash   TEXT,                           -- NULL = OIDC-only
+    ui_locale       TEXT NOT NULL DEFAULT 'en',
     role            TEXT NOT NULL DEFAULT 'user'
                         CHECK (role IN ('admin', 'user', 'viewer')),
     is_active       INTEGER NOT NULL DEFAULT 1,

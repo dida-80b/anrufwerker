@@ -1,23 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Login — Anrufwerker{% endblock %}
+{% block title %}{{ t.login_title }} — Anrufwerker{% endblock %}
 
 {% block auth_content %}
 <div class="login-wrap">
   <div class="login-card">
     <section class="login-brand">
-      <div class="eyebrow" style="background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.18);color:white;">Dashboard Access</div>
+      <div class="eyebrow" style="background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.18);color:white;">{{ t.login_eyebrow }}</div>
       <h1>Anrufwerker<br>Control Room</h1>
-      <p style="max-width:360px;color:rgba(255,255,255,0.82);">A clear workspace for leads, user access, and company configuration. After the first setup, sign in with the default admin account and change the password immediately.</p>
+      <p style="max-width:360px;color:rgba(255,255,255,0.82);">{{ t.login_intro }}</p>
       <div style="margin-top:26px;padding:16px;border-radius:18px;background:rgba(255,255,255,0.12);">
-        <div style="font-weight:800;margin-bottom:6px;">First Start</div>
-        <div class="hint" style="color:rgba(255,255,255,0.78);">Default login: {{ default_admin_email }}. The initial password is set only through the environment during setup and must not be shown on the login page.</div>
+        <div style="font-weight:800;margin-bottom:6px;">{{ t.login_first_start }}</div>
+        <div class="hint" style="color:rgba(255,255,255,0.78);">{{ t.login_default_hint.format(email=default_admin_email) }}</div>
       </div>
     </section>
 
     <section class="login-panel">
       <div>
-        <strong style="display:block;font-size:1.2rem;">Sign In</strong>
-        <div class="hint">Only registered users with an active role can access the dashboard.</div>
+        <strong style="display:block;font-size:1.2rem;">{{ t.login_sign_in }}</strong>
+        <div class="hint">{{ t.login_access_hint }}</div>
       </div>
 
       {% if error %}
@@ -25,20 +25,20 @@
       {% endif %}
 
       {% if seeded %}
-      <div class="alert success">The default admin account has been created. Sign in with it now and change the password immediately.</div>
+      <div class="alert success">{{ t.login_seeded }}</div>
       {% endif %}
 
       <form method="post" action="/login">
         <input type="hidden" name="next" value="{{ next }}">
         <label>
-          <div style="font-weight:800;margin-bottom:6px;">Email</div>
+          <div style="font-weight:800;margin-bottom:6px;">{{ t.label_email }}</div>
           <input type="email" name="email" value="{{ default_admin_email }}" autocomplete="username">
         </label>
         <label>
-          <div style="font-weight:800;margin-bottom:6px;">Password</div>
+          <div style="font-weight:800;margin-bottom:6px;">{{ t.label_password }}</div>
           <input type="password" name="password" autocomplete="current-password">
         </label>
-        <button type="submit">Login</button>
+        <button type="submit">{{ t.button_login }}</button>
       </form>
     </section>
   </div>

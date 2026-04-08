@@ -710,11 +710,11 @@
       </div>
 
       <div class="nav-links">
-        <a class="nav-link {% if request.url.path == '/' or request.url.path.startswith('/lead') %}active{% endif %}" href="/">Inbox</a>
-        <a class="nav-link {% if request.url.path.startswith('/account') %}active{% endif %}" href="/account">Account</a>
+        <a class="nav-link {% if request.url.path == '/' or request.url.path.startswith('/lead') %}active{% endif %}" href="/">{{ t.nav_inbox }}</a>
+        <a class="nav-link {% if request.url.path.startswith('/account') %}active{% endif %}" href="/account">{{ t.nav_account }}</a>
         {% if current_user.role == 'admin' %}
-        <a class="nav-link {% if request.url.path.startswith('/admin/users') %}active{% endif %}" href="/admin/users">Users</a>
-        <a class="nav-link {% if request.url.path.startswith('/admin/settings') %}active{% endif %}" href="/admin/settings">Settings</a>
+        <a class="nav-link {% if request.url.path.startswith('/admin/users') %}active{% endif %}" href="/admin/users">{{ t.nav_users }}</a>
+        <a class="nav-link {% if request.url.path.startswith('/admin/settings') %}active{% endif %}" href="/admin/settings">{{ t.nav_settings }}</a>
         {% endif %}
       </div>
 

@@ -1,21 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Settings — Anrufwerker{% endblock %}
+{% block title %}{{ t.settings_title }} — Anrufwerker{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div>
-    <div class="eyebrow">Admin</div>
-    <h1>Settings</h1>
-    <p>Language, model parameters, prompts, and extraction.</p>
+    <div class="eyebrow">{{ t.admin_eyebrow }}</div>
+    <h1>{{ t.settings_title }}</h1>
+    <p>{{ t.settings_intro }}</p>
   </div>
 </section>
 
 {% if saved %}
-<div class="alert success">Saved. Changes apply on the next worker or call cycle.</div>
+<div class="alert success">{{ t.settings_saved }}</div>
 {% endif %}
 
 {% if not settings %}
-<div class="alert warning">The settings table is still empty and will be initialized on the first worker start.</div>
+<div class="alert warning">{{ t.settings_empty }}</div>
 {% endif %}
 
 <form method="post" action="/admin/settings" class="section-grid">
@@ -23,7 +23,7 @@
     {% for section in sections %}
     <a href="#{{ section.id }}">{{ section.title }}</a>
     {% endfor %}
-    <button type="submit">Save</button>
+    <button type="submit">{{ t.button_save }}</button>
   </aside>
 
   <div>

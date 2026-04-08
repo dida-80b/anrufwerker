@@ -16,6 +16,9 @@ from .db import DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, db, init_db
 
 app = FastAPI(title="Anrufwerker Dashboard")
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+LOCALES_DIR = Path(__file__).parent / "locales"
+DEFAULT_UI_LOCALE = "en"
+SUPPORTED_UI_LOCALES = ("en", "de")
 
 SESSION_COOKIE = "anrufwerker_session"
 SESSION_DAYS = 14
@@ -52,9 +55,9 @@ URGENCY_COLORS = {
 }
 
 USER_ROLE_OPTIONS = [
-    ("admin", "Admin"),
-    ("user", "User"),
-    ("viewer", "Viewer"),
+    ("admin", "role_admin"),
+    ("user", "role_user"),
+    ("viewer", "role_viewer"),
 ]
 
 _SETTINGS_SECTIONS = [
@@ -156,6 +159,8 @@ _SETTINGS_SECTIONS = [
     },
 ]
 
+_LOCALES_CACHE: dict[str, dict[str, str]] = {}
+
 
 @app.on_event("startup")
 async def startup() -> None:
@@ -205,6 +210,38 @@ def _fmt_ts(ts: str | None) -> str:
         return f"{day}.{month}. {time}"
     except Exception:
         return ts[:16]
+
+
+def _resolve_ui_locale(value: str | None) -> str:
+    locale = (value or DEFAULT_UI_LOCALE).strip().lower()
+    if locale not in SUPPORTED_UI_LOCALES:
+        return DEFAULT_UI_LOCALE
+    return locale
+
+
+def _load_locale(locale: str) -> dict[str, str]:
+    locale = _resolve_ui_locale(locale)
+    cached = _LOCALES_CACHE.get(locale)
+    if cached is not None:
+        return cached
+    path = LOCALES_DIR / f"{locale}.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    _LOCALES_CACHE[locale] = data
+    return data
+
+
+def _get_translations(locale: str) -> dict[str, str]:
+    base = dict(_load_locale(DEFAULT_UI_LOCALE))
+    if locale != DEFAULT_UI_LOCALE:
+        base.update(_load_locale(locale))
+    return base
+
+
+def _tr(t: dict[str, str], key: str, **kwargs) -> str:
+    value = t.get(key, key)
+    if kwargs:
+        return value.format(**kwargs)
+    return value
 
 
 def _utc_now() -> str:
@@ -260,6 +297,7 @@ def _get_current_user(request: Request) -> dict | None:
                 u.display_name,
                 u.role,
                 u.is_active,
+                u.ui_locale,
                 u.must_change_password,
                 u.password_changed_at,
                 u.tenant_id,
@@ -296,13 +334,36 @@ def _require_role(request: Request, role: str = "viewer") -> dict:
 
 
 def _render(request: Request, template_name: str, context: dict, status_code: int = 200):
+    current_user = getattr(request.state, "user", None)
+    locale = _resolve_ui_locale((current_user or {}).get("ui_locale"))
+    t = _get_translations(locale)
+    role_labels = {value: _tr(t, key) for value, key in USER_ROLE_OPTIONS}
+    status_labels = {key: _tr(t, f"status_{key}") for key, _ in LEAD_STATUSES}
+    urgency_labels = {
+        "normal": _tr(t, "urgency_normal"),
+        "urgent": _tr(t, "urgency_urgent"),
+        "emergency": _tr(t, "urgency_emergency"),
+    }
+    ui_locales = [
+        {"value": code, "label": _load_locale(code)["locale_name"]}
+        for code in SUPPORTED_UI_LOCALES
+    ]
     base_context = {
         "request": request,
-        "current_user": getattr(request.state, "user", None),
-        "role_labels": dict(USER_ROLE_OPTIONS),
+        "current_user": current_user,
+        "role_labels": role_labels,
+        "status_labels": status_labels,
+        "urgency_labels": urgency_labels,
+        "ui_locale": locale,
+        "ui_locales": ui_locales,
+        "t": t,
     }
     base_context.update(context)
     return templates.TemplateResponse(template_name, base_context, status_code=status_code)
+
+
+def _locale_for_user(user: dict | None) -> str:
+    return _resolve_ui_locale((user or {}).get("ui_locale"))
 
 
 def _set_session(response: RedirectResponse, user_id: str, request: Request) -> None:
@@ -505,7 +566,9 @@ def _load_lead_detail(lead_id: str) -> dict | None:
     return {"lead": lead, "calls": calls, "events": events}
 
 
-def _render_events_fragment(lead_id: str) -> str:
+def _render_events_fragment(lead_id: str, locale: str) -> str:
+    t = _get_translations(locale)
+    status_labels = {key: _tr(t, f"status_{key}") for key, _ in LEAD_STATUSES}
     conn = db()
     try:
         events = conn.execute(
@@ -525,9 +588,9 @@ def _render_events_fragment(lead_id: str) -> str:
         ts_fmt = _fmt_ts(event["created_at"])
         actor = event["actor_id"] or "system"
         if event["event_type"] == "note_added":
-            text = f"Note added: {event['new_value']}"
+            text = _tr(t, "timeline_note", value=event["new_value"])
         elif event["event_type"] == "status_changed":
-            text = f"Status changed to {dict(LEAD_STATUSES).get(event['new_value'], event['new_value'])}"
+            text = f"{_tr(t, 'label_status')} → {status_labels.get(event['new_value'], event['new_value'])}"
         else:
             text = event["event_type"]
         items.append(
@@ -696,7 +759,8 @@ async def update_status(request: Request, lead_id: str, status: str = Form(...))
     finally:
         conn.close()
 
-    label = dict(LEAD_STATUSES).get(status, status)
+    t = _get_translations(_locale_for_user(user))
+    label = _tr(t, f"status_{status}")
     color = STATUS_COLORS.get(status, "slate")
     return HTMLResponse(
         f"""
@@ -710,6 +774,7 @@ async def update_status(request: Request, lead_id: str, status: str = Form(...))
 @app.post("/lead/{lead_id}/note", response_class=HTMLResponse)
 async def add_note(request: Request, lead_id: str, note: str = Form(...)):
     user = _require_role(request, "user")
+    t = _get_translations(_locale_for_user(user))
     note = note.strip()
     if not note:
         return HTMLResponse("", status_code=200)
@@ -738,7 +803,7 @@ async def add_note(request: Request, lead_id: str, note: str = Form(...)):
     finally:
         conn.close()
 
-    events_html = _render_events_fragment(lead_id)
+    events_html = _render_events_fragment(lead_id, _locale_for_user(user))
     return HTMLResponse(
         f"""
         {events_html}
@@ -747,8 +812,8 @@ async def add_note(request: Request, lead_id: str, note: str = Form(...)):
               hx-target="#notes-panel"
               hx-swap="innerHTML"
               hx-on::after-request="this.reset()">
-          <input type="text" name="note" placeholder="Add note" autocomplete="off">
-          <button type="submit">Save</button>
+          <input type="text" name="note" placeholder="{html.escape(_tr(t, 'lead_add_note'))}" autocomplete="off">
+          <button type="submit">{html.escape(_tr(t, 'button_save'))}</button>
         </form>
         """
     )
@@ -766,6 +831,19 @@ async def account(request: Request, saved: str = "", error: str = "", forced: st
             "forced": forced == "1" or bool(user["must_change_password"]),
         },
     )
+
+
+@app.post("/account/locale")
+async def change_ui_locale(request: Request, ui_locale: str = Form(...)):
+    user = _require_role(request, "viewer")
+    locale = _resolve_ui_locale(ui_locale)
+    conn = db()
+    try:
+        with conn:
+            conn.execute("UPDATE users SET ui_locale=? WHERE id=?", (locale, user["id"]))
+    finally:
+        conn.close()
+    return RedirectResponse("/account", status_code=303)
 
 
 @app.post("/account/password")

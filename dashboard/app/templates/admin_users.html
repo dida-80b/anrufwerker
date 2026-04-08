@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Users — Anrufwerker{% endblock %}
+{% block title %}{{ t.users_title }} — Anrufwerker{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div>
-    <div class="eyebrow">Admin</div>
-    <h1>Users & Access</h1>
-    <p>Role model with Admin, User, and Viewer. New passwords force a change on first login.</p>
+    <div class="eyebrow">{{ t.admin_eyebrow }}</div>
+    <h1>{{ t.users_heading }}</h1>
+    <p>{{ t.users_intro }}</p>
   </div>
 </section>
 
 {% if saved %}
-<div class="alert success">User management updated.</div>
+<div class="alert success">{{ t.users_saved }}</div>
 {% endif %}
 {% if error %}
 <div class="alert error">{{ error }}</div>
@@ -19,57 +19,57 @@
 
 <div class="detail-grid" style="margin-bottom:20px;">
   <article>
-    <h3>Create User</h3>
+    <h3>{{ t.users_create_heading }}</h3>
     <form method="post" action="/admin/users" class="layout-grid">
       <div class="field-grid" style="margin-bottom:12px;">
         <div class="field">
-          <label>Name</label>
+          <label>{{ t.label_name }}</label>
           <input type="text" name="display_name" autocomplete="off">
         </div>
         <div class="field">
-          <label>Email</label>
+          <label>{{ t.label_email }}</label>
           <input type="email" name="email" autocomplete="off">
         </div>
         <div class="field">
-          <label>Role</label>
+          <label>{{ t.label_role }}</label>
           <select name="role">
             {% for value, label in role_options %}
-            <option value="{{ value }}">{{ label }}</option>
+            <option value="{{ value }}">{{ role_labels[value] }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="field">
-          <label>Initial Password</label>
+          <label>{{ t.users_initial_password }}</label>
           <input type="text" name="password" value="{{ default_password }}" autocomplete="off">
         </div>
       </div>
-      <div><button type="submit">Create User</button></div>
+      <div><button type="submit">{{ t.button_create_user }}</button></div>
     </form>
   </article>
 
   <article>
-    <h3>Role Model</h3>
+    <h3>{{ t.users_role_model }}</h3>
     <div class="field-grid">
-      <div class="field"><label>Admin</label><div>Full access to users, settings, and leads.</div></div>
-      <div class="field"><label>User</label><div>Can read the inbox and update leads.</div></div>
-      <div class="field"><label>Viewer</label><div>Read-only access for office or reporting users.</div></div>
-      <div class="field"><label>Password Policy</label><div>Reset accounts must change their password on first login.</div></div>
+      <div class="field"><label>{{ role_labels['admin'] }}</label><div>{{ t.users_admin_help }}</div></div>
+      <div class="field"><label>{{ role_labels['user'] }}</label><div>{{ t.users_user_help }}</div></div>
+      <div class="field"><label>{{ role_labels['viewer'] }}</label><div>{{ t.users_viewer_help }}</div></div>
+      <div class="field"><label>{{ t.label_password }}</label><div>{{ t.users_password_policy_help }}</div></div>
     </div>
   </article>
 </div>
 
 <article>
-  <h3>Existing Users ({{ users | length }})</h3>
+  <h3>{{ t.users_existing.format(count=users | length) }}</h3>
   <div class="table-shell">
     <table class="user-table">
       <thead>
         <tr>
-          <th>User</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Last Login</th>
-          <th>Change Role</th>
-          <th>Password / Active</th>
+          <th>{{ t.users_user_col }}</th>
+          <th>{{ t.label_role }}</th>
+          <th>{{ t.users_status_col }}</th>
+          <th>{{ t.users_last_login_col }}</th>
+          <th>{{ t.users_change_role_col }}</th>
+          <th>{{ t.users_password_active_col }}</th>
         </tr>
       </thead>
       <tbody>
@@ -80,18 +80,16 @@
             <div class="lead-sub mono">{{ user.email }}</div>
           </td>
           <td>
-            <span class="badge" data-color="{% if user.role == 'admin' %}blue{% elif user.role == 'user' %}green{% else %}slate{% endif %}">
-              {{ role_labels[user.role] }}
-            </span>
+            <span class="badge" data-color="{% if user.role == 'admin' %}blue{% elif user.role == 'user' %}green{% else %}slate{% endif %}">{{ role_labels[user.role] }}</span>
           </td>
           <td>
             {% if user.is_active %}
-            <span class="badge" data-color="green">Active</span>
+            <span class="badge" data-color="green">{{ t.users_active }}</span>
             {% else %}
-            <span class="badge" data-color="red">Inactive</span>
+            <span class="badge" data-color="red">{{ t.users_inactive }}</span>
             {% endif %}
             {% if user.must_change_password %}
-            <div class="lead-sub" style="margin-top:4px;">Password change required</div>
+            <div class="lead-sub" style="margin-top:4px;">{{ t.users_password_change_required }}</div>
             {% endif %}
           </td>
           <td class="mono">{{ user.last_login_fmt }}</td>
@@ -99,21 +97,21 @@
             <form method="post" action="/admin/users/{{ user.id }}/role" class="inline-form">
               <select name="role">
                 {% for value, label in role_options %}
-                <option value="{{ value }}" {% if value == user.role %}selected{% endif %}>{{ label }}</option>
+                <option value="{{ value }}" {% if value == user.role %}selected{% endif %}>{{ role_labels[value] }}</option>
                 {% endfor %}
               </select>
-              <button type="submit">OK</button>
+              <button type="submit">{{ t.button_set }}</button>
             </form>
           </td>
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <form method="post" action="/admin/users/{{ user.id }}/reset-password" class="inline-form">
                 <input type="text" name="password" value="{{ default_password }}" autocomplete="off" style="width:110px;">
-                <button type="submit">Reset</button>
+                <button type="submit">{{ t.button_reset_password }}</button>
               </form>
               <form method="post" action="/admin/users/{{ user.id }}/toggle">
                 <button type="submit" class="{% if user.is_active %}danger{% else %}secondary{% endif %}">
-                  {% if user.is_active %}Disable{% else %}Enable{% endif %}
+                  {% if user.is_active %}{{ t.button_disable }}{% else %}{{ t.button_enable }}{% endif %}
                 </button>
               </form>
             </div>
