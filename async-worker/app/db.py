@@ -1,5 +1,5 @@
 """
-Datenbankzugriff — Queue-DB (jobs) und Dashboard-DB (calls/leads/settings).
+Database access — queue DB (jobs) and dashboard DB (calls/leads/settings).
 """
 
 import os
@@ -11,7 +11,7 @@ QUEUE_DSN = os.getenv("QUEUE_DSN", "/app/data/queue.db")
 DASHBOARD_DSN = os.getenv("DASHBOARD_DSN", "/app/data/dashboard.db")
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
-# Extraction-Prompt-Default (Platzhalter: {transcript})
+# Default extraction prompt (placeholder: {transcript})
 EXTRACTION_PROMPT_DEFAULT = """Du analysierst einen Telefon-Gesprächs-Transcript eines Handwerksbetriebs und extrahierst strukturierte Daten.
 
 TRANSCRIPT:
@@ -48,7 +48,7 @@ def _now() -> str:
 
 
 def get_setting(key: str, default: str = "") -> str:
-    """Liest einen Setting-Wert aus der Dashboard-DB. Gibt default zurück bei Fehler oder leerem Wert."""
+    """Read a setting value from the dashboard DB. Returns default on error or empty value."""
     try:
         Path(DASHBOARD_DSN).parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(DASHBOARD_DSN)
@@ -100,11 +100,11 @@ def dashboard_db() -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys=ON")
     if SCHEMA_PATH.exists():
         conn.executescript(SCHEMA_PATH.read_text())
-    # Extraction-Prompt zu lang für SQL INSERT OR IGNORE — hier separat seeden
+    # Extraction prompt too long for the SQL INSERT OR IGNORE in schema — seed separately here
     conn.execute(
         "INSERT OR IGNORE INTO settings (key, value, description) VALUES (?, ?, ?)",
         ("extraction_prompt", EXTRACTION_PROMPT_DEFAULT,
-         "Extraction-Prompt ({transcript} wird durch Gesprächstext ersetzt)"),
+         "Extraction prompt ({transcript} is replaced with the conversation text)"),
     )
     conn.commit()
     return conn

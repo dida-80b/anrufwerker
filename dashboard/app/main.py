@@ -24,13 +24,13 @@ PUBLIC_PATHS = {"/login", "/health", "/favicon.ico"}
 PASSWORD_CHANGE_ALLOWED = {"/account", "/account/password", "/logout", "/health", "/favicon.ico"}
 
 LEAD_STATUSES = [
-    ("new", "Neu"),
-    ("needs_review", "Prüfen"),
-    ("qualified", "Qualifiziert"),
-    ("callback_open", "Rückruf offen"),
-    ("scheduled", "Termin vereinbart"),
-    ("done", "Erledigt"),
-    ("closed_no_conversion", "Kein Auftrag"),
+    ("new", "New"),
+    ("needs_review", "Review"),
+    ("qualified", "Qualified"),
+    ("callback_open", "Callback pending"),
+    ("scheduled", "Scheduled"),
+    ("done", "Done"),
+    ("closed_no_conversion", "No conversion"),
     ("spam", "Spam"),
 ]
 
@@ -60,21 +60,21 @@ USER_ROLE_OPTIONS = [
 _SETTINGS_SECTIONS = [
     {
         "id": "speech",
-        "title": "Telefonie / Sprache",
-        "description": "TTS-, STT- und Sprach-Endpoints für Live-Anrufe.",
+        "title": "Telephony / Speech",
+        "description": "TTS, STT and speech endpoints for live calls.",
         "fields": [
-            ("tts_engine", "TTS-Engine (piper / edge)", "text"),
-            ("tts_voice", "Edge-TTS Stimme (nur bei engine=edge)", "text"),
+            ("tts_engine", "TTS Engine (piper / edge)", "text"),
+            ("tts_voice", "Edge-TTS Voice (only when engine=edge)", "text"),
             ("piper_url", "Piper URL", "text"),
             ("piper_voice", "Piper Voice", "text"),
-            ("stt_engine", "STT-Engine", "text"),
+            ("stt_engine", "STT Engine", "text"),
             ("whisper_url", "Whisper URL", "text"),
         ],
     },
     {
         "id": "runtime",
         "title": "Runtime / VAD",
-        "description": "Schwellwerte und Timeout-Verhalten während des Gesprächs.",
+        "description": "Thresholds and timeout behaviour during calls.",
         "fields": [
             ("vad_speech_frames_to_start", "VAD Speech Frames To Start", "text"),
             ("vad_silence_frames_to_end", "VAD Silence Frames To End", "text"),
@@ -85,73 +85,73 @@ _SETTINGS_SECTIONS = [
             ("min_user_rms_process", "Min User RMS Process", "text"),
             ("inactivity_timeout", "Inactivity Timeout", "text"),
             ("checkin_timeout", "Check-In Timeout", "text"),
-            ("max_tts_seconds_per_sentence", "Max TTS Sekunden pro Satz", "text"),
-            ("max_tts_sentences_per_turn", "Max TTS Sätze pro Turn", "text"),
-            ("max_tts_seconds_intro", "Max TTS Sekunden Intro", "text"),
+            ("max_tts_seconds_per_sentence", "Max TTS Seconds Per Sentence", "text"),
+            ("max_tts_sentences_per_turn", "Max TTS Sentences Per Turn", "text"),
+            ("max_tts_seconds_intro", "Max TTS Seconds Intro", "text"),
             ("no_regreet_after_intro", "No Regreet After Intro", "text"),
             ("process_buffered_during_llm", "Process Buffered During LLM", "text"),
         ],
     },
     {
         "id": "firma",
-        "title": "Firmendaten",
-        "description": "Grunddaten, Rückrufnummer und Geschäftsprofil des Betriebs.",
+        "title": "Company Data",
+        "description": "Basic details, callback number and business profile.",
         "fields": [
-            ("company_name", "Firmenname", "text"),
-            ("company_owner", "Inhaber / Ansprechpartner", "text"),
-            ("company_phone_callback", "Rückruf-Nummer", "text"),
-            ("company_address", "Anschrift", "text"),
-            ("company_since", "Gegründet", "text"),
-            ("company_employee_count", "Mitarbeiterzahl", "text"),
-            ("company_greeting", "Begrüßungstext", "text"),
-            ("company_services", "Dienstleistungen", "text"),
-            ("company_opening_hours", "Öffnungszeiten", "text"),
-            ("company_escalation_message", "Eskalations-Nachricht", "text"),
-            ("company_emergency_number", "Notfall-Nummer", "text"),
+            ("company_name", "Company Name", "text"),
+            ("company_owner", "Owner / Contact Person", "text"),
+            ("company_phone_callback", "Callback Number", "text"),
+            ("company_address", "Address", "text"),
+            ("company_since", "Founded", "text"),
+            ("company_employee_count", "Number of Employees", "text"),
+            ("company_greeting", "Greeting Text", "text"),
+            ("company_services", "Services", "text"),
+            ("company_opening_hours", "Opening Hours", "text"),
+            ("company_escalation_message", "Escalation Message", "text"),
+            ("company_emergency_number", "Emergency Number", "text"),
         ],
     },
     {
         "id": "telefon",
-        "title": "Telefon-KI",
-        "description": "Modell, Sampling und Kontext für die Live-Telefonie.",
+        "title": "Phone AI",
+        "description": "Model, sampling and context for live telephony.",
         "fields": [
             ("llm_url", "Ollama URL", "text"),
-            ("llm_model", "Modell", "text"),
+            ("llm_model", "Model", "text"),
             ("llm_temperature", "Temperature", "text"),
             ("llm_top_p", "Top-P", "text"),
             ("llm_num_predict", "Max. Tokens", "text"),
             ("llm_repeat_penalty", "Repeat Penalty", "text"),
-            ("llm_num_ctx", "Kontext-Größe", "text"),
+            ("llm_num_ctx", "Context Size", "text"),
         ],
     },
     {
         "id": "bot",
-        "title": "Bot-Verhalten",
-        "description": "Was der Bot aktiv tun darf und was nicht.",
+        "title": "Bot Behaviour",
+        "description": "What the bot is allowed to do and what it is not.",
         "fields": [
-            ("company_bot_can", "Bot kann", "text"),
-            ("company_bot_cannot", "Bot kann nicht", "text"),
+            ("company_bot_can", "Bot can", "text"),
+            ("company_bot_cannot", "Bot cannot", "text"),
         ],
     },
     {
         "id": "prompt",
-        "title": "Inbound-Prompt",
-        "description": "Regeln und Sprachstil für den Telefon-Bot.",
+        "title": "Inbound Prompt",
+        "description": "Rules and tone of voice for the phone bot.",
         "fields": [
-            ("system_prompt_inbound", "Systemprompt", "textarea"),
+            ("system_prompt_inbound", "System Prompt", "textarea"),
         ],
     },
     {
         "id": "extraktion",
-        "title": "Extraktion",
-        "description": "Post-Call-Parsing, Confidence und Prompt für den Async-Worker.",
+        "title": "Extraction",
+        "description": "Post-call parsing, confidence and prompt for the async worker.",
         "fields": [
             ("ollama_url", "Ollama URL", "text"),
-            ("ollama_model", "Modell", "text"),
-            ("confidence_threshold", "Confidence-Schwelle", "text"),
-            ("duration_factor", "Sek. pro Turn", "text"),
-            ("stt_provider", "STT-Provider-Label", "text"),
-            ("extraction_prompt", "Extraction-Prompt", "textarea"),
+            ("ollama_model", "Model", "text"),
+            ("confidence_threshold", "Confidence Threshold", "text"),
+            ("duration_factor", "Seconds per Turn", "text"),
+            ("stt_provider", "STT Provider Label", "text"),
+            ("extraction_prompt", "Extraction Prompt", "textarea"),
         ],
     },
 ]
@@ -186,7 +186,7 @@ async def permission_error_handler(request: Request, exc: PermissionError):
     message = str(exc)
     if message == "not_authenticated":
       return RedirectResponse(_login_redirect_target(request), status_code=303)
-    return HTMLResponse("Keine Berechtigung", status_code=403)
+    return HTMLResponse("Access denied", status_code=403)
 
 
 def _login_redirect_target(request: Request) -> str:
@@ -525,9 +525,9 @@ def _render_events_fragment(lead_id: str) -> str:
         ts_fmt = _fmt_ts(event["created_at"])
         actor = event["actor_id"] or "system"
         if event["event_type"] == "note_added":
-            text = f"Notiz ergänzt: {event['new_value']}"
+            text = f"Note added: {event['new_value']}"
         elif event["event_type"] == "status_changed":
-            text = f"Status geändert auf {dict(LEAD_STATUSES).get(event['new_value'], event['new_value'])}"
+            text = f"Status changed to {dict(LEAD_STATUSES).get(event['new_value'], event['new_value'])}"
         else:
             text = event["event_type"]
         items.append(
@@ -594,7 +594,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
         conn.close()
 
     if not user or not user["is_active"] or not _verify_password(password, user["password_hash"]):
-        params = urlencode({"error": "Login fehlgeschlagen", "next": next or "/"})
+        params = urlencode({"error": "Login failed", "next": next or "/"})
         return RedirectResponse(f"/login?{params}", status_code=303)
 
     response = RedirectResponse(next or "/", status_code=303)
@@ -654,7 +654,7 @@ async def lead_detail(request: Request, lead_id: str):
     _require_role(request, "viewer")
     data = _load_lead_detail(lead_id)
     if not data:
-        return HTMLResponse("<h2>Lead nicht gefunden</h2>", status_code=404)
+        return HTMLResponse("<h2>Lead not found</h2>", status_code=404)
     return _render(
         request,
         "lead_detail.html",
@@ -673,14 +673,14 @@ async def update_status(request: Request, lead_id: str, status: str = Form(...))
     user = _require_role(request, "user")
     valid_statuses = {key for key, _ in LEAD_STATUSES}
     if status not in valid_statuses:
-        return HTMLResponse("Ungültiger Status", status_code=400)
+        return HTMLResponse("Invalid status", status_code=400)
 
     conn = db()
     try:
         with conn:
             old = conn.execute("SELECT status FROM leads WHERE id=?", (lead_id,)).fetchone()
             if not old:
-                return HTMLResponse("Nicht gefunden", status_code=404)
+                return HTMLResponse("Not found", status_code=404)
             conn.execute(
                 "UPDATE leads SET status=?, updated_at=? WHERE id=?",
                 (status, _utc_now(), lead_id),
@@ -719,7 +719,7 @@ async def add_note(request: Request, lead_id: str, note: str = Form(...)):
         with conn:
             existing = conn.execute("SELECT notes FROM leads WHERE id=?", (lead_id,)).fetchone()
             if not existing:
-                return HTMLResponse("Nicht gefunden", status_code=404)
+                return HTMLResponse("Not found", status_code=404)
             ts = datetime.now(timezone.utc).strftime("%d.%m. %H:%M")
             old_notes = existing["notes"] or ""
             new_notes = f"{old_notes}\n[{ts}] {note}".strip()
@@ -747,8 +747,8 @@ async def add_note(request: Request, lead_id: str, note: str = Form(...)):
               hx-target="#notes-panel"
               hx-swap="innerHTML"
               hx-on::after-request="this.reset()">
-          <input type="text" name="note" placeholder="Notiz hinzufügen" autocomplete="off">
-          <button type="submit">Speichern</button>
+          <input type="text" name="note" placeholder="Add note" autocomplete="off">
+          <button type="submit">Save</button>
         </form>
         """
     )
@@ -777,9 +777,9 @@ async def change_password(
 ):
     user = _require_role(request, "viewer")
     if new_password != confirm_password:
-        return RedirectResponse("/account?error=Passwörter%20stimmen%20nicht%20überein", status_code=303)
+        return RedirectResponse("/account?error=Passwords%20do%20not%20match", status_code=303)
     if len(new_password) < 10:
-        return RedirectResponse("/account?error=Passwort%20zu%20kurz", status_code=303)
+        return RedirectResponse("/account?error=Password%20too%20short", status_code=303)
 
     conn = db()
     try:
@@ -788,7 +788,7 @@ async def change_password(
             (user["id"],),
         ).fetchone()
         if not row or not _verify_password(current_password, row["password_hash"]):
-            return RedirectResponse("/account?error=Aktuelles%20Passwort%20ist%20falsch", status_code=303)
+            return RedirectResponse("/account?error=Current%20password%20is%20incorrect", status_code=303)
         with conn:
             conn.execute(
                 """
@@ -868,9 +868,9 @@ async def create_user(
 ):
     current_user = _require_role(request, "admin")
     if role not in dict(USER_ROLE_OPTIONS):
-        return RedirectResponse("/admin/users?error=Ungültige%20Rolle", status_code=303)
+        return RedirectResponse("/admin/users?error=Invalid%20role", status_code=303)
     if len(password) < 10:
-        return RedirectResponse("/admin/users?error=Passwort%20zu%20kurz", status_code=303)
+        return RedirectResponse("/admin/users?error=Password%20too%20short", status_code=303)
 
     conn = db()
     try:
@@ -893,7 +893,7 @@ async def create_user(
                 ),
             )
     except Exception:
-        return RedirectResponse("/admin/users?error=User%20konnte%20nicht%20angelegt%20werden", status_code=303)
+        return RedirectResponse("/admin/users?error=Failed%20to%20create%20user", status_code=303)
     finally:
         conn.close()
     return RedirectResponse("/admin/users?saved=1", status_code=303)
@@ -903,9 +903,9 @@ async def create_user(
 async def update_user_role(request: Request, user_id: str, role: str = Form(...)):
     current_user = _require_role(request, "admin")
     if role not in dict(USER_ROLE_OPTIONS):
-        return RedirectResponse("/admin/users?error=Ungültige%20Rolle", status_code=303)
+        return RedirectResponse("/admin/users?error=Invalid%20role", status_code=303)
     if user_id == current_user["id"] and role != "admin":
-        return RedirectResponse("/admin/users?error=Eigenen%20Adminzugang%20nicht%20entziehen", status_code=303)
+        return RedirectResponse("/admin/users?error=Cannot%20remove%20your%20own%20admin%20access", status_code=303)
 
     conn = db()
     try:
@@ -920,7 +920,7 @@ async def update_user_role(request: Request, user_id: str, role: str = Form(...)
 async def toggle_user_active(request: Request, user_id: str):
     current_user = _require_role(request, "admin")
     if user_id == current_user["id"]:
-        return RedirectResponse("/admin/users?error=Eigenen%20Account%20nicht%20deaktivieren", status_code=303)
+        return RedirectResponse("/admin/users?error=Cannot%20deactivate%20your%20own%20account", status_code=303)
 
     conn = db()
     try:
@@ -940,7 +940,7 @@ async def toggle_user_active(request: Request, user_id: str):
 async def reset_user_password(request: Request, user_id: str, password: str = Form(...)):
     _require_role(request, "admin")
     if len(password) < 10:
-        return RedirectResponse("/admin/users?error=Passwort%20zu%20kurz", status_code=303)
+        return RedirectResponse("/admin/users?error=Password%20too%20short", status_code=303)
 
     conn = db()
     try:

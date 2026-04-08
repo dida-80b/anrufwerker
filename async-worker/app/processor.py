@@ -1,5 +1,5 @@
 """
-Job-Processor: holt Jobs aus der Queue, schreibt Calls + Leads in die Dashboard-DB.
+Job processor: dequeues jobs, writes calls + leads into the dashboard DB.
 """
 
 import json
@@ -12,7 +12,7 @@ logger = logging.getLogger("processor")
 
 
 def _get_or_create_tenant(conn, company_name: str) -> str:
-    """Gibt tenant_id zurück — legt Tenant an falls nicht vorhanden."""
+    """Return tenant_id — creates the tenant if it does not exist."""
     slug = company_name.lower().replace(" ", "-").replace("&", "und")[:64]
     row = conn.execute("SELECT id FROM tenants WHERE slug=?", (slug,)).fetchone()
     if row:
@@ -21,12 +21,12 @@ def _get_or_create_tenant(conn, company_name: str) -> str:
         "INSERT INTO tenants (slug, name) VALUES (?, ?) RETURNING id",
         (slug, company_name),
     ).fetchone()["id"]
-    logger.info(f"Tenant angelegt: {company_name} ({tid})")
+    logger.info(f"Tenant created: {company_name} ({tid})")
     return tid
 
 
 def _upsert_call(conn, tenant_id: str, transcript: dict) -> str:
-    """Schreibt Call-Rohdaten in die DB. Gibt call_id zurück."""
+    """Write raw call data to DB. Returns call_id."""
     session_uuid = transcript["session_uuid"]
     existing = conn.execute(
         "SELECT id FROM calls WHERE session_uuid=?", (session_uuid,)
@@ -34,7 +34,7 @@ def _upsert_call(conn, tenant_id: str, transcript: dict) -> str:
     if existing:
         return existing["id"]
 
-    # caller_id aus Transcript → caller_number im DB-Feld
+    # caller_id from transcript → caller_number in DB field
     caller_number = transcript.get("caller_id") or None
     started_at = transcript.get("timestamp", _now())
     messages = transcript.get("messages", [])
@@ -71,12 +71,12 @@ def _upsert_call(conn, tenant_id: str, transcript: dict) -> str:
         ),
     ).fetchone()["id"]
 
-    logger.info(f"Call gespeichert: {session_uuid} → {call_id}")
+    logger.info(f"Call saved: {session_uuid} → {call_id}")
     return call_id
 
 
 def _upsert_lead(conn, tenant_id: str, call_id: str, extracted: dict) -> str:
-    """Erstellt Lead aus extrahierten Daten. Gibt lead_id zurück."""
+    """Create lead from extracted data. Returns lead_id."""
     existing = conn.execute(
         "SELECT lead_id FROM lead_calls WHERE call_id=?", (call_id,)
     ).fetchone()
@@ -142,7 +142,7 @@ def _upsert_lead(conn, tenant_id: str, call_id: str, extracted: dict) -> str:
         ),
     )
 
-    logger.info(f"Lead gespeichert: {lead_id} (status={status})")
+    logger.info(f"Lead saved: {lead_id} (status={status})")
     return lead_id
 
 
@@ -160,15 +160,15 @@ def _update_call_extraction(conn, call_id: str, status: str, error: str | None):
 
 def process_job(job_id: int, call_uuid: str, payload_raw: str) -> bool:
     """
-    Verarbeitet einen Job:
-    1. Transcript → calls-Tabelle
-    2. Ollama-Extraktion → leads-Tabelle
-    3. Job als 'done' markieren
-    Gibt True bei Erfolg zurück.
+    Process a job:
+    1. Transcript → calls table
+    2. Ollama extraction → leads table
+    3. Mark job as 'done'
+    Returns True on success.
     """
     try:
         transcript = json.loads(payload_raw)
-        company = transcript.get("company", "Unbekannter Betrieb")
+        company = transcript.get("company", "Unknown Business")
 
         dash = dashboard_db()
         try:
@@ -179,7 +179,7 @@ def process_job(job_id: int, call_uuid: str, payload_raw: str) -> bool:
                     "UPDATE calls SET extraction_status='running' WHERE id=?", (call_id,)
                 )
 
-            logger.info(f"Starte Extraktion für {call_uuid}")
+            logger.info(f"Starting extraction for {call_uuid}")
             extracted = extract(transcript)
 
             with dash:
@@ -202,11 +202,11 @@ def process_job(job_id: int, call_uuid: str, payload_raw: str) -> bool:
         finally:
             q.close()
 
-        logger.info(f"Job {job_id} ({call_uuid}) erfolgreich verarbeitet")
+        logger.info(f"Job {job_id} ({call_uuid}) processed successfully")
         return True
 
     except Exception as exc:
-        logger.error(f"Job {job_id} ({call_uuid}) fehlgeschlagen: {exc}")
+        logger.error(f"Job {job_id} ({call_uuid}) failed: {exc}")
         try:
             q = queue_db()
             try:

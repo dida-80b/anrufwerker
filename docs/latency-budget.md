@@ -1,24 +1,23 @@
 # anrufwerker - Latency Budget
 
-## Ziel
+## Goal
 
-> Budget gilt primär für **Inbound Live-Calls**. Outbound kann eigenes Budget/Fallbacks haben, da es meist nicht vom aktiven Anruferdruck abhängt.
+> This budget applies primarily to **inbound live calls**. Outbound calls can have their own budget / fallbacks since they are not subject to active caller pressure.
 
+**Maximum response time on a live call: 2–3 seconds**
 
-**Maximale Antwortzeit im Live-Call: 2-3 Sekunden**
-
-Dieses Dokument definiert das Latenz-Budget für alle Komponenten im Live-Call-Pfad.
+This document defines the latency budget for all components in the live-call path.
 
 ---
 
-## Latency Breakdown
+## Latency breakdown
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                         Latency Budget                                  │
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                        │
-│  Caller spricht ──────────────────────────────────────────────────▶  │
+│  Caller speaks ───────────────────────────────────────────────────▶  │
 │  │                                                                    │
 │  ▼                                                                    │
 │  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────┐  │
@@ -27,114 +26,114 @@ Dieses Dokument definiert das Latenz-Budget für alle Komponenten im Live-Call-P
 │  └─────────────┘   └─────────────┘   └─────────────┘   └─────────┘  │
 │       300ms            800ms             800ms            400ms     │
 │  ════════════════════════════════════════════════════════════════   │
-│  TOTAL: 2300ms (Ziel: < 3000ms)                                        │
+│  TOTAL: 2300ms (target: < 3000ms)                                      │
 │                                                                        │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Komponenten-Details
+## Component details
 
-### 1. Audio Buffer / VAD (300ms)
+### 1. Audio buffer / VAD (300ms)
 
-| Parameter | Wert |
-|-----------|------|
-| Buffer Size | 100-300ms |
-| VAD Latency | ~50ms |
-| Network Jitter | +150ms (Puffer) |
+| Parameter | Value |
+|-----------|-------|
+| Buffer size | 100–300ms |
+| VAD latency | ~50ms |
+| Network jitter | +150ms (buffer) |
 
-**Optimierung**: 
-- Adaptive Buffering basierend auf Netzwerkqualität
-- Bei guter Verbindung: 100ms Buffer
-- Bei schlechter Verbindung: 300ms Buffer
+**Optimisation**:
+- Adaptive buffering based on network quality
+- Good connection: 100ms buffer
+- Poor connection: 300ms buffer
 
-### 2. STT - Speech-to-Text (800ms)
+### 2. STT — speech-to-text (800ms)
 
-| Modell | Latenz (approx) |
-|--------|-----------------|
-| Faster-Whisper (base) | 500-800ms |
-| Faster-Whisper (small) | 300-500ms |
-| Whisper.cpp | 600-1000ms |
-
-**Budget**: 800ms
-
-**Optimierung**:
-- `faster-whisper` mit small/base Modell
-- Batch-Processing bei längeren Segmenten
-- Streaming-Modus nutzen
-
-### 3. LLM - Intent + Response (800ms)
-
-| Modell | Latenz (approx) |
-|--------|-----------------|
-| ministral-3:14b-instruct-2512-q8_0 (Q4) | 600-1200ms |
-| ministral-3:14b-instruct-2512-q8_0 (Q4) | 400-800ms |
-| mistral:7b | 700-1500ms |
+| Model | Latency (approx) |
+|-------|-----------------|
+| Faster-Whisper (base) | 500–800ms |
+| Faster-Whisper (small) | 300–500ms |
+| Whisper.cpp | 600–1000ms |
 
 **Budget**: 800ms
 
-**Optimierung**:
-- `ministral-3:14b-instruct-2512-q8_0` für schnelle Antworten
-- Prompt-Engineering für kurze Outputs
-- Keine externen API-Calls (lokales Modell)
-- Max Tokens: 50-100 (nicht mehr)
+**Optimisation**:
+- `faster-whisper` with small/base model
+- Batch processing for longer segments
+- Use streaming mode
 
-### 4. TTS - Text-to-Speech (400ms)
+### 3. LLM — intent + response (800ms)
 
-| Modell | Latenz (approx) |
-|--------|-----------------|
-| Piper (ONNX) | 100-300ms |
-| Edge TTS (online) | 300-600ms |
+| Model | Latency (approx) |
+|-------|-----------------|
+| ministral-3:14b-instruct-2512-q8_0 (Q8) | 600–1200ms |
+| ministral-3:14b-instruct-2512-q8_0 (Q4) | 400–800ms |
+| mistral:7b | 700–1500ms |
+
+**Budget**: 800ms
+
+**Optimisation**:
+- `ministral-3:14b-instruct-2512-q8_0` for fast responses
+- Prompt engineering for short outputs
+- No external API calls (local model)
+- Max tokens: 50–100 (no more)
+
+### 4. TTS — text-to-speech (400ms)
+
+| Model | Latency (approx) |
+|-------|-----------------|
+| Piper (ONNX) | 100–300ms |
+| Edge TTS (online) | 300–600ms |
 
 **Budget**: 400ms
 
-**Optimierung**:
-- Silero mit ONNX-Runtime
-- Pre-generierte Audio-Fragmente für Standard-Antworten
-- Streaming-TTS wenn verfügbar
+**Optimisation**:
+- Piper with ONNX runtime
+- Pre-generated audio fragments for standard responses
+- Streaming TTS where available
 
 ---
 
-## Worst-Case Szenario
+## Worst-case scenarios
 
-| Szenario | Latenz | Gesamt |
-|----------|--------|--------|
+| Scenario | Latency | Total |
+|----------|---------|-------|
 | Normal | 2300ms | OK |
-| Schlechtes Netz | +500ms | 2800ms |
-| Langsames Modell | +500ms | 2800ms |
-| Beides | +1000ms | 3300ms |
+| Poor network | +500ms | 2800ms |
+| Slow model | +500ms | 2800ms |
+| Both | +1000ms | 3300ms |
 
-**Falls Latenz überschritten**:
-1. Timeout mittwort (" Standard-AnEinen Moment bitte...")
-2. Caller auf Warteschlange
-3. Fallback auf Mensch (Transfer)
+**If latency is exceeded**:
+1. Timeout response ("One moment please...")
+2. Caller placed in queue
+3. Fallback to human (transfer)
 
 ---
 
-## Async-Path (kein Live-Budget)
+## Async path (no live budget)
 
-Folgende Operationen sind NICHT im Live-Latenz-Budget:
+The following operations are NOT in the live latency budget:
 
-- Kontaktsuche
-- Kalender-Abfrage
-- CRM-Update
-- E-Mail/SMS-Versand
-- Transcripts-Speicherung
+- Contact search
+- Calendar query
+- CRM update
+- Email / SMS send
+- Transcript storage
 
-Diese laufen im **Async Worker** nach Call-Ende.
+These run in the **async worker** after the call ends.
 
 ---
 
 ## Monitoring
 
-**Metriken**:
+**Metrics**:
 
 ```prometheus
-# Latenz pro Komponente
+# Latency per component
 latency_stt_seconds_bucket{le="1"}
 latency_llm_seconds_bucket{le="1"}
-latency_tts_seconds_bucket{0.5"}
+latency_tts_seconds_bucket{le="0.5"}
 
-# End-to-End
+# End-to-end
 latency_total_seconds_bucket{le="3"}
 ```
 
@@ -144,12 +143,12 @@ latency_total_seconds_bucket{le="3"}
 
 ---
 
-## Tuning-Knobs
+## Tuning knobs
 
-| ENV | Beschreibung | Default |
-|-----|--------------|---------|
-| `FAST_STT_MODEL` | Whisper Modell | `small` |
-| `OLLAMA_MODEL` | LLM-Modell | `ministral-3:14b-instruct-2512-q8_0` |
-| `OLLAMA_NUM_PREDICT` | Max Tokens für Response | `80` |
-| `PIPER_VOICE` | Piper Voice | `de_DE-thorsten-high` |
-| `VAD_SILENCE_FRAMES_TO_END` | Stille-Frames bis Turn-Ende | `12` |
+| ENV | Description | Default |
+|-----|-------------|---------|
+| `FAST_STT_MODEL` | Whisper model | `small` |
+| `OLLAMA_MODEL` | LLM model | `ministral-3:14b-instruct-2512-q8_0` |
+| `OLLAMA_NUM_PREDICT` | Max tokens for response | `80` |
+| `PIPER_VOICE` | Piper voice | `de_DE-thorsten-high` |
+| `VAD_SILENCE_FRAMES_TO_END` | Silence frames until turn ends | `12` |

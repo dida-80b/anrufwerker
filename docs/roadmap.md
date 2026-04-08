@@ -1,123 +1,123 @@
 # anrufwerker - Roadmap
 
-## Phasenübersicht
+## Phase overview
 
-| Phase | Zeitraum | Focus | Meilenstein |
-|-------|----------|-------|-------------|
-| MVP | 4-6 Wochen | Kernfunktionalität | Erster Testanruf |
-| Pilot | 8-12 Wochen | Erste Kunden | 3-5 Piloten |
-| Produkt | Ongoing | Skalierung | Markteintritt |
+| Phase | Timeline | Focus | Milestone |
+|-------|----------|-------|-----------|
+| MVP | 4–6 weeks | Core functionality | First test call |
+| Pilot | 8–12 weeks | First customers | 3–5 pilots |
+| Product | Ongoing | Scaling | Market entry |
 
 ---
 
 ## Phase 1: MVP (Minimum Viable Product)
 
-### Ziel
-Funktionierender Demo-System mit Basisfähigkeiten.
+### Goal
+Working demo system with baseline capabilities.
 
-### Umfang
+### Scope
 
-- [ ] Asterisk-Anbindung (SIP/RTP)
+- [ ] Asterisk integration (SIP/RTP)
 - [ ] STT (Faster-Whisper)
-- [ ] Intent Detection (ministral-3:14b-instruct-2512-q8_0 via Host-Ollama)
-- [ ] Kurze Text-Antworten generieren
+- [ ] Intent detection (ministral-3:14b-instruct-2512-q8_0 via host Ollama)
+- [ ] Generate short text responses
 - [ ] TTS (Piper)
-- [ ] SQLite Queue
-- [ ] Async Worker für Contact-Log
-- [ ] Basis-Konfiguration via JSON/env
-- [ ] Outbound PoC (mission-basierter Bestätigungsanruf, optional)
+- [ ] SQLite queue
+- [ ] Async worker for contact log
+- [ ] Basic configuration via JSON/env
+- [ ] Outbound PoC (mission-based confirmation call, optional)
 
 ### Deliverables
 
-- docker-compose.yml mit allen Services
-- sip-bridge AudioSocket-Handler
-- Worker-Job-Verarbeitung
-- Tenant-Konfiguration (JSON)
-- Transcripts-Speicherung
+- docker-compose.yml with all services
+- sip-bridge AudioSocket handler
+- Worker job processing
+- Tenant configuration (JSON)
+- Transcript storage
 
-### Testkriterien
+### Test criteria
 
-- Anruf wird angenommen und beantwortet
-- Intent wird korrekt erkannt (>80% bei klaren Anfragen)
-- Latenz < 5s (Ziel: <3s)
-- Keine Runtime-Crashes
+- Call is answered and replied to
+- Intent correctly detected (>80% on clear requests)
+- Latency < 5s (target: <3s)
+- No runtime crashes
 
 ---
 
 ## Phase 2: Pilot
 
-### Ziel
-Echte Kundenpiloten im Handwerker-Bereich.
+### Goal
+Real customer pilots in the trades sector.
 
-### Umfang
+### Scope
 
-- [ ] Fritzbox CAPI-Integration
-- [ ] CardDAV-Adapter für Kontakte
-- [ ] CalDAV-Adapter für Kalender
-- [ ] OpenClaw-Adapter (optional)
-- [ ] Outbound-Orchestrator (Rate-Limit + Allowed-Hours + Approval-Regeln)
-- [ ] Konfigurierbare Prompts
-- [ ] Logging/Dashboard
-- [ ] Retry-Mechanismen im Worker
-
-### Deliverables
-
-- Adapter-Interface dokumentiert
-- 3-5 Piloten mit Live-System
-- Feedback-Loop implementiert
-- Erste Trainingsdaten gesammelt
-
-### Testkriterien
-
-- 95% Uptime
-- < 3s durchschnittliche Antwortzeit
-- Piloten zufrieden (NPS > 7)
-
----
-
-## Phase 3: Produkt
-
-### Ziel
-Marktreifes Produkt für Handwerker.
-
-### Umfang
-
-- [ ] Redis/Postgres Queue (statt SQLite)
-- [ ] Multi-Tenantfähigkeit
-- [ ] Web-Dashboard für Admins
-- [ ] Audio-Recording (opt-in)
-- [ ] Erweiterte Intents (Preisanfrage, Status)
-- [ ] CRM-Integrationen
-- [ ] SLA-Monitoring
-- [ ] Rollen/Rechte-System
+- [ ] SIP trunk integrations (Fritz!Box, Sipgate, Telekom, etc.)
+- [ ] CardDAV adapter for contacts
+- [ ] CalDAV adapter for calendar
+- [ ] OpenClaw adapter (optional)
+- [ ] Outbound orchestrator (rate limit + allowed hours + approval rules)
+- [ ] Configurable prompts
+- [ ] Logging / dashboard
+- [ ] Retry mechanisms in worker
 
 ### Deliverables
 
-- Produktive Installation bei 20+ Kunden
-- Support-Prozesse
-- Dokumentation für Endkunden
-- Trainingsdaten-Asset (anonymisiert)
+- Adapter interface documented
+- 3–5 pilots with live system
+- Feedback loop implemented
+- First training data collected
+
+### Test criteria
+
+- 95% uptime
+- < 3s average response time
+- Pilots satisfied (NPS > 7)
 
 ---
 
-## Backlog (Future)
+## Phase 3: Product
 
-- Arztpraxen-Modul
-- Mehrsprachigkeit (EN, TR, etc.)
-- Voicemail-Erkennung
-- Sentiment-Analyse
-- Call-Analytics Dashboard
-- Marketing-Automation
-- WhatsApp/SMS-Integration
+### Goal
+Market-ready product for tradespeople and small businesses.
+
+### Scope
+
+- [ ] Redis/Postgres queue (instead of SQLite)
+- [ ] Multi-tenancy
+- [ ] Web dashboard for admins
+- [ ] Audio recording (opt-in)
+- [ ] Extended intents (price enquiry, status)
+- [ ] CRM integrations
+- [ ] SLA monitoring
+- [ ] Role / permission system
+
+### Deliverables
+
+- Production installation at 20+ customers
+- Support processes
+- End-user documentation
+- Training data asset (anonymised)
 
 ---
 
-## Meilensteine (Zeitmarken)
+## Backlog (future)
 
-| Meilenstein | Geplant | Status |
-|-------------|---------|--------|
-| Blueprint fertig | 2026-03-11 | ✅ |
-| MVP Code complete | TBD | ⏳ |
-| Erster Testanruf | TBD | ⏳ |
-| Pilot deploybar | TBD | ℔ |
-| Produkt ready | TBD | ℔ |
+- Medical practice module
+- Multi-language support (EN, TR, etc.)
+- Voicemail detection
+- Sentiment analysis
+- Call analytics dashboard
+- Marketing automation
+- WhatsApp / SMS integration
+
+---
+
+## Milestones
+
+| Milestone | Planned | Status |
+|-----------|---------|--------|
+| Blueprint complete | 2026-03-11 | ✅ |
+| MVP code complete | TBD | ⏳ |
+| First test call | TBD | ⏳ |
+| Pilot deployable | TBD | ℔ |
+| Product ready | TBD | ℔ |

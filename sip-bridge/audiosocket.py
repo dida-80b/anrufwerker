@@ -83,24 +83,24 @@ class AudioSocketSession:
     uuid: str
     messages: list = field(
         default_factory=list
-    )  # Gesprächshistorie [{role, content}, ...]
-    mission: str = ""  # Aktuelle Aufgabe/Mission für diesen Call
-    send_queue: object = None  # asyncio.Queue Referenz für Barge-in
+    )  # Conversation history [{role, content}, ...]
+    mission: str = ""  # Current task/mission for this call
+    send_queue: object = None  # asyncio.Queue reference for barge-in
     audio_buffer: bytearray = field(default_factory=bytearray)
     last_transcript: str = ""
     processing: bool = False  # guard against concurrent STT tasks
     barge_in_active: bool = (
-        False  # True wenn Barge-in gefeuert hat → _enqueue_tts skippt
+        False  # True when barge-in has fired → _enqueue_tts skips
     )
-    bot_speaking_until: float = 0.0  # timestamp bis wann Bot spricht (STT stumm)
+    bot_speaking_until: float = 0.0  # timestamp until which the bot is speaking (STT muted)
     last_activity_time: float = field(
         default_factory=time.time
-    )  # letzter User/Bot-Turn
+    )  # last user/bot turn
     last_audio_time: float = field(
         default_factory=time.time
-    )  # letzter eingehender Audio-Frame
+    )  # last incoming audio frame
     intro_playing: bool = (
-        True  # Barge-in bis Ende des Intros deaktiviert (verhindert Echo-Halluzination)
+        True  # Barge-in disabled until intro ends (prevents echo hallucination)
     )
     # VAD state
     speech_counter: int = 0
@@ -111,17 +111,17 @@ class AudioSocketSession:
     )
     barge_in_saved_audio: list = field(
         default_factory=list
-    )  # Gerettete TTS-Frames bei falschem Barge-in
-    # Inbound-Felder
-    direction: str = "outbound"  # "inbound" oder "outbound"
-    caller_id: str = ""  # Rufnummer des Anrufers (inbound)
-    company: str = ""  # Firmenname (aus company config)
-    caller_intent: str = ""  # Erkanntes Anliegen (wird nach Gespräch gesetzt)
+    )  # Saved TTS frames on false barge-in
+    # Inbound fields
+    direction: str = "outbound"  # "inbound" or "outbound"
+    caller_id: str = ""  # Caller's phone number (inbound)
+    company: str = ""  # Company name (from company config)
+    caller_intent: str = ""  # Detected intent (set after conversation)
     system_prompt_override: str = (
-        ""  # Vollständiger System-Prompt (ersetzt prompt.md bei inbound)
+        ""  # Full system prompt (replaces prompt.md for inbound)
     )
     greeting: str = (
-        ""  # Exakter Begrüßungstext aus Company-Config (wird direkt als TTS gespielt)
+        ""  # Exact greeting text from company config (played directly as TTS)
     )
 
 
@@ -148,7 +148,7 @@ class AudioSocketServer:
         self.transcripts_dir = transcripts_dir
         self.inbound_prompt_fn = inbound_prompt_fn
         self.sessions: dict[str, AudioSocketSession] = {}
-        self._pending_missions: dict[str, str] = {}  # session_uuid → mission/content
+        self._pending_missions: dict[str, str] = {}  # session_uuid → mission/content (str or dict)
         self._server_sock: Optional[_socket_mod.socket] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
 
@@ -262,7 +262,7 @@ class AudioSocketServer:
                     chunk = SILENCE_FRAME
 
                 if chunk is None:
-                    # Hangup-Signal (z.B. Inaktivitäts-Timeout)
+                    # Hangup signal (e.g. inactivity timeout)
                     logger.info(f"[{session_uuid}] Sending hangup to Asterisk")
                     try:
                         writer.write(struct.pack(">BH", KIND_HANGUP, 0))
@@ -306,8 +306,8 @@ class AudioSocketServer:
                     )
                     return
 
-                # Frame-level logging erzeugt hohe Last und Audio-Jitter.
-                # Daher absichtlich kein Log pro Audio-Paket.
+                # Frame-level logging creates high load and audio jitter.
+                # Intentionally no per-packet log.
 
                 if kind == KIND_UUID:
                     session_uuid = (
@@ -319,7 +319,7 @@ class AudioSocketServer:
                     )
                     pending = self._pending_missions.pop(session_uuid, "")
 
-                    # Pending kann str (outbound mission) oder dict (inbound session) sein
+                    # Pending can be str (outbound mission) or dict (inbound session)
                     direction = "outbound"
                     caller_id = ""
                     company = ""
@@ -333,7 +333,7 @@ class AudioSocketServer:
                         system_prompt_override = pending.get("prompt", "")
                         greeting = pending.get("greeting", "")
                         logger.info(
-                            f"[{session_uuid}] Inbound call from {caller_id or '(unbekannt)'} | company: {company}"
+                            f"[{session_uuid}] Inbound call from {caller_id or '(unknown)'} | company: {company}"
                         )
                     else:
                         mission = pending if isinstance(pending, str) else ""
@@ -348,7 +348,7 @@ class AudioSocketServer:
                         system_prompt_override=system_prompt_override,
                         greeting=greeting,
                     )
-                    # Kurz stumm schalten — Echo-Schutz bis erstes TTS-Audio kommt
+                    # Mute briefly — echo protection until first TTS audio arrives
                     session.bot_speaking_until = time.time() + 3.0
                     self.sessions[session_uuid] = session
                     log_extra = (
@@ -413,13 +413,13 @@ class AudioSocketServer:
         if not session:
             return
 
-        # Eingehender Audio-Frame (für robusten Inaktivitäts-Check)
+        # Incoming audio frame (for robust inactivity check)
         session.last_audio_time = time.time()
         frame_rms = rms_level(audio_data)
 
-        # Barge-in: läuft immer — auch während LLM verarbeitet
+        # Barge-in: always active — even while LLM is processing
         if time.time() < session.bot_speaking_until:
-            # Barge-in: User unterbricht den Bot (höherer Threshold, mehr Frames nötig)
+            # Barge-in: user interrupts the bot (higher threshold, more frames needed)
             if frame_rms >= self._setting_int("vad_barge_in_threshold", "VAD_BARGE_IN_THRESHOLD", VAD_BARGE_IN_THRESHOLD):
                 session.speech_counter += 1
                 if session.speech_counter >= self._setting_int("vad_barge_in_frames", "VAD_BARGE_IN_FRAMES", VAD_BARGE_IN_FRAMES):
@@ -452,8 +452,8 @@ class AudioSocketServer:
                 session.speech_counter = 0
                 return
 
-        # Während LLM verarbeitet: VAD und Buffer laufen weiter,
-        # aber kein neuer STT-Trigger — gespeichert wird trotzdem
+        # While LLM is processing: VAD and buffer keep running,
+        # but no new STT trigger — audio is still buffered
         if session.processing:
             if frame_rms >= self._setting_int("vad_rms_threshold", "VAD_RMS_THRESHOLD", VAD_RMS_THRESHOLD):
                 if (
@@ -471,7 +471,7 @@ class AudioSocketServer:
                 session.preroll.append(bytes(audio_data))
             return
 
-        # RMS-based VAD: Prüfe ob Frame Sprache enthält
+        # RMS-based VAD: check whether frame contains speech
         is_speech = frame_rms >= self._setting_int("vad_rms_threshold", "VAD_RMS_THRESHOLD", VAD_RMS_THRESHOLD)
 
         if is_speech:
@@ -481,7 +481,7 @@ class AudioSocketServer:
                 not session.is_recording
                 and session.speech_counter >= self._setting_int("vad_speech_frames_to_start", "VAD_SPEECH_FRAMES_TO_START", VAD_SPEECH_FRAMES_TO_START)
             ):
-                # Sprach-Onset: Preroll-Buffer rückwirkend einbinden
+                # Speech onset: include preroll buffer retroactively
                 session.is_recording = True
                 for frame in session.preroll:
                     session.audio_buffer.extend(frame)
@@ -492,9 +492,9 @@ class AudioSocketServer:
             session.speech_counter = 0
             session.silence_counter += 1
             if not session.is_recording:
-                # Noch kein Recording: Frame in Preroll-Ringbuffer legen
+                # Not recording yet: add frame to preroll ring buffer
                 session.preroll.append(bytes(audio_data))
-            # Stille-Frames NICHT in den STT-Buffer schreiben
+            # Silence frames are NOT written to the STT buffer
 
         # Utterance beenden nach genug Stille
         if (
@@ -513,9 +513,9 @@ class AudioSocketServer:
                     self._process_audio_task(session, audio_bytes, send_queue)
                 )
 
-    # Whisper nutzt eckige Klammern für Nicht-Sprach-Annotationen.
-    # Diese sind NIE echter User-Input — Whisper schreibt das selbst rein.
-    # Wörter wie "Tschüss" oder "Danke" filtern wir NICHT — der User könnte das wirklich sagen.
+    # Whisper uses square brackets for non-speech annotations.
+    # These are NEVER real user input — Whisper inserts them itself.
+    # Words like "Goodbye" or "Thanks" are NOT filtered — the user might actually say them.
 
     async def _process_audio_task(
         self,
@@ -524,7 +524,7 @@ class AudioSocketServer:
         send_queue: asyncio.Queue,
     ):
         def _resume_if_saved():
-            """Gerettete TTS-Frames nach falschem Barge-in wieder einreihen."""
+            """Re-queue saved TTS frames after a false barge-in."""
             saved = session.barge_in_saved_audio
             if not saved:
                 return
@@ -544,13 +544,13 @@ class AudioSocketServer:
                 resume_ms=int(resume_duration * 1000),
             )
             logger.info(
-                f"[{session.uuid}] Kein echter Input — Resume: {len(saved)} Frames ({resume_duration:.1f}s)"
+                f"[{session.uuid}] No real input — resuming: {len(saved)} frames ({resume_duration:.1f}s)"
             )
 
         try:
-            # --- Schritt 1: Hat der Buffer überhaupt echte Sprache? ---
-            # RMS über den ganzen Buffer prüfen. Leitungsrauschen liegt bei ~100-300,
-            # echte Sprache bei 1000+. Buffer-Durchschnitt < 600 → kein echter Inhalt.
+            # --- Step 1: Does the buffer contain real speech? ---
+            # Check RMS across the entire buffer. Line noise sits at ~100–300,
+            # real speech at 1000+. Buffer average < 600 → no real content.
             rms = rms_level(audio_bytes)
             min_user_rms = self._setting_int("min_user_rms_process", "MIN_USER_RMS_PROCESS", MIN_USER_RMS_PROCESS)
             if rms < min_user_rms:
@@ -588,8 +588,8 @@ class AudioSocketServer:
                 _resume_if_saved()
                 return
 
-            # --- Schritt 2: Whisper-Annotationen filtern ---
-            # Whisper schreibt Nicht-Sprach-Sounds in eckige Klammern: [Musik], [Stille], [Applaus]
+            # --- Step 2: Filter Whisper annotations ---
+            # Whisper writes non-speech sounds in square brackets: [Music], [Silence], [Applause]
             transcript = re.sub(r"\[.*?\]", "", transcript).strip()
 
             if not transcript:
@@ -598,7 +598,7 @@ class AudioSocketServer:
                 _resume_if_saved()
                 return
 
-            # Echter Input erkannt → gerettete Frames verwerfen
+            # Real input detected → discard saved frames
             session.barge_in_saved_audio = []
 
             if transcript == session.last_transcript:
@@ -611,10 +611,10 @@ class AudioSocketServer:
             session.last_activity_time = time.time()
             logger.info(f"[{session.uuid}] Transcript: {transcript}")
 
-            # User-Nachricht zur Historie hinzufügen
+            # Append user message to history
             session.messages.append({"role": "user", "content": transcript})
 
-            # Streaming: Callback ist async generator → TTS satzweise parallel zur LLM-Antwort
+            # Streaming: callback is async generator → TTS sentence-by-sentence in parallel with LLM response
             sentence_count = 0
             response_parts = []
             _t_llm = time.time()
@@ -629,7 +629,7 @@ class AudioSocketServer:
                     if _llm_first:
                         logger.info(f"[{session.uuid}] ⏱ LLM first sentence: {(time.time()-_t_llm)*1000:.0f}ms")
                         _llm_first = False
-                    # Telefonregel: kurz halten, variabel per ENV.
+                    # Phone rule: keep responses short, configurable via ENV.
                     if sentence_count >= self._setting_int("max_tts_sentences_per_turn", "MAX_TTS_SENTENCES_PER_TURN", MAX_TTS_SENTENCES_PER_TURN):
                         break
                     logger.info(
@@ -646,7 +646,7 @@ class AudioSocketServer:
                     response_parts.append(sentence)
                     sentence_count += 1
 
-            # Antwort zur Historie hinzufügen
+            # Append assistant response to history
             if response_parts:
                 session.messages.append(
                     {"role": "assistant", "content": " ".join(response_parts)}
@@ -659,7 +659,7 @@ class AudioSocketServer:
                     text_chars=sum(len(part) for part in response_parts),
                 )
 
-            # Dedup nach Antwort zurücksetzen → User kann gleichen Satz wiederholen
+            # Reset dedup after response → user can repeat the same sentence
             session.last_transcript = ""
             logger.info(f"[{session.uuid}] Response done ({sentence_count} sentences)")
         except Exception as exc:
@@ -667,7 +667,7 @@ class AudioSocketServer:
         finally:
             session.processing = False
             session.barge_in_active = False
-            # Optional: während LLM aufgesammelten Buffer sofort verarbeiten (kann CPU/latency verschlechtern)
+            # Optional: immediately process audio buffered during LLM (may increase CPU/latency)
             if (
                 self._setting_bool("process_buffered_during_llm", "PROCESS_BUFFERED_DURING_LLM", PROCESS_BUFFERED_DURING_LLM)
                 and session.is_recording
@@ -691,7 +691,7 @@ class AudioSocketServer:
     # TTS generation → send queue
     # ------------------------------------------------------------------
 
-    # Emojis und nicht-sprechbare Unicode-Symbole rausfiltern
+    # Filter out emojis and non-speakable Unicode symbols
     _EMOJI_RE = re.compile(
         "[\U00010000-\U0010ffff\U0001f300-\U0001f9ff\u2600-\u27bf]+",
         flags=re.UNICODE,
@@ -710,11 +710,11 @@ class AudioSocketServer:
         text = self._MARKDOWN_RE.sub("", text).strip()
         if not text:
             return
-        # Keine erneute Begrüßung mitten im Gespräch (konfigurierbar)
+        # Suppress re-greeting mid-conversation (configurable)
         session = self.sessions.get(session_uuid)
         if session and self._setting_bool("no_regreet_after_intro", "NO_REGREET_AFTER_INTRO", NO_REGREET_AFTER_INTRO) and len(session.messages) > 1:
             low = text.lower()
-            # Nur echte Zweit-Begrüßungen filtern, NICHT Verabschiedungen (auf wiederhören/sehen)
+            # Only filter genuine second greetings, NOT farewells (auf wiederhören/sehen)
             if any(g in low for g in ["guten tag", "hallo"]) and not any(
                 f in low
                 for f in ["auf wiederhören", "auf wiedersehen", "tschüss", "tschüs"]
@@ -724,7 +724,7 @@ class AudioSocketServer:
         session = self.sessions.get(session_uuid)
         if session and session.barge_in_active:
             logger.info(
-                f"[{session_uuid}] Barge-in aktiv — TTS übersprungen: {text[:40]}"
+                f"[{session_uuid}] Barge-in active — TTS skipped: {text[:40]}"
             )
             return
         try:
@@ -751,7 +751,7 @@ class AudioSocketServer:
                 max_seconds if max_seconds is not None else self._setting_float("max_tts_seconds_per_sentence", "MAX_TTS_SECONDS_PER_SENTENCE", MAX_TTS_SECONDS_PER_SENTENCE)
             )
             max_frames = max(1, int(cap / FRAME_DUR))
-            # Backlog VOR dem Enqueuen messen — sonst werden eigene Frames doppelt gezählt
+            # Measure backlog BEFORE enqueueing — otherwise own frames are counted twice
             queue_delay = send_queue.qsize() * FRAME_DUR
             log_event(
                 logger,
@@ -770,16 +770,16 @@ class AudioSocketServer:
                 await send_queue.put(chunk)
                 frames += 1
 
-            # STT für Dauer des Audios + Queue-Backlog + Echo-Puffer sperren
+            # Mute STT for audio duration + queue backlog + echo buffer
             speaking_duration = frames * FRAME_DUR + 0.4
             session = self.sessions.get(session_uuid)
             if session:
                 new_until = time.time() + queue_delay + speaking_duration
-                # Nur verlängern, nie verkürzen (falls mehrere Sätze hintereinander)
+                # Only extend, never shorten (if multiple sentences follow each other)
                 if new_until > session.bot_speaking_until:
                     session.bot_speaking_until = new_until
 
-            # Aktivitäts-Timer verlängern damit der Watchdog nicht während Bot-Antwort feuert
+            # Extend activity timer so the watchdog does not fire during bot response
             if session:
                 session.last_activity_time = time.time()
             logger.info(
@@ -798,8 +798,8 @@ class AudioSocketServer:
     def _to_wav(self, slin_data: bytes) -> bytes:
         return slin_to_wav_bytes(slin_data, SAMPLE_RATE, SAMPLE_WIDTH, CHANNELS)
 
-    # Konfidenz-Schwelle: avg_logprob unter diesem Wert → Halluzination
-    # -0.6 ist ein guter Startwert; näher an 0 = strenger, weiter weg = lockerer
+    # Confidence threshold: avg_logprob below this value → hallucination
+    # -0.6 is a good starting point; closer to 0 = stricter, further away = looser
     LOGPROB_THRESHOLD = float(os.getenv("STT_LOGPROB_THRESHOLD", "-1.3"))
 
     async def _transcribe(self, wav_data: bytes) -> str:
@@ -829,12 +829,12 @@ class AudioSocketServer:
         yield f"Du hast gesagt: {last_user}"
 
     async def _start_session(self, send_queue: asyncio.Queue, session_uuid: str):
-        """LLM generiert die Begrüßung selbst — kein vorgefertigter Intro-Text."""
+        """The LLM generates the greeting itself — no pre-written intro text."""
         session = self.sessions.get(session_uuid)
         if not session:
             return
 
-        # Begrüßung: direkt aus Company-Config (kein LLM-Umweg) oder LLM-Fallback
+        # Greeting: directly from company config (no LLM round-trip) or LLM fallback
         if session.greeting:
             logger.info(f"[{session_uuid}] Intro (config): {session.greeting[:80]}")
             await self._enqueue_tts(
@@ -845,7 +845,7 @@ class AudioSocketServer:
             )
             session.messages.append({"role": "assistant", "content": session.greeting})
         else:
-            # Outbound / kein Config-Greeting: LLM generiert die Begrüßung
+            # Outbound / no config greeting: LLM generates the greeting
             trigger = [{"role": "user", "content": "[GESPRÄCH BEGINNT]"}]
             logger.info(
                 f"[{session_uuid}] Triggering LLM intro (mission: {session.mission[:60]})"
@@ -874,11 +874,11 @@ class AudioSocketServer:
                 await self._enqueue_tts(send_queue, session_uuid, fallback)
                 session.messages.append({"role": "assistant", "content": fallback})
 
-        # Barge-in erst nach Ende des Intros freischalten
+        # Enable barge-in only after the intro has finished playing
         asyncio.create_task(self._clear_intro_flag(session_uuid))
 
     async def _clear_intro_flag(self, session_uuid: str):
-        """Schaltet Barge-in frei sobald das Intro fertig gespielt wurde."""
+        """Enable barge-in once the intro has finished playing."""
         await asyncio.sleep(0.5)
         session = self.sessions.get(session_uuid)
         if not session:
@@ -888,12 +888,12 @@ class AudioSocketServer:
         await asyncio.sleep(0.5)
         if session_uuid in self.sessions:
             session.intro_playing = False
-            logger.info(f"[{session_uuid}] Intro fertig — Barge-in aktiv")
+            logger.info(f"[{session_uuid}] Intro done — barge-in enabled")
 
     async def _inactivity_watchdog(self, session_uuid: str):
         """
-        Fragt nach CHECKIN_TIMEOUT Sekunden Stille nach ("Sind Sie noch dran?").
-        Legt nach INACTIVITY_TIMEOUT Sekunden Stille auf.
+        Prompts after CHECKIN_TIMEOUT seconds of silence ("Are you still there?").
+        Hangs up after INACTIVITY_TIMEOUT seconds of silence.
         """
         await asyncio.sleep(10)  # kurze Startpause
         checkin_done = False
@@ -909,15 +909,15 @@ class AudioSocketServer:
             checkin_timeout = self._setting_int("checkin_timeout", "CHECKIN_TIMEOUT", CHECKIN_TIMEOUT)
             if idle >= inactivity_timeout:
                 logger.info(
-                    f"[{session_uuid}] Inaktivitäts-Timeout ({idle:.0f}s) — lege auf"
+                    f"[{session_uuid}] Inactivity timeout ({idle:.0f}s) — hanging up"
                 )
                 if session.send_queue:
                     await session.send_queue.put(None)
                 return
-            # Check-in nur bei echter Stille:
-            # - kein User/Bot-Turn seit CHECKIN_TIMEOUT
-            # - kein eingehender Audio-Frame seit CHECKIN_TIMEOUT
-            # - Bot spricht gerade nicht
+            # Check-in only on real silence:
+            # - no user/bot turn since CHECKIN_TIMEOUT
+            # - no incoming audio frame since CHECKIN_TIMEOUT
+            # - bot is not currently speaking
             if (
                 idle >= checkin_timeout
                 and idle_audio >= checkin_timeout
@@ -926,10 +926,10 @@ class AudioSocketServer:
                 and not session.processing
             ):
                 checkin_done = True
-                logger.info(f"[{session_uuid}] Stille {idle:.0f}s — LLM-Check-in")
-                # Stille als User-Message injizieren → LLM antwortet kontextuell
+                logger.info(f"[{session_uuid}] Silence {idle:.0f}s — LLM check-in")
+                # Inject silence as user message → LLM responds contextually
                 session.messages.append(
-                    {"role": "user", "content": f"[STILLE: {int(idle)} Sekunden]"}
+                    {"role": "user", "content": f"[SILENCE: {int(idle)} seconds]"}
                 )
                 response_parts = []
                 async for sentence in self._iter_response(
@@ -947,12 +947,12 @@ class AudioSocketServer:
                     session.messages.append(
                         {"role": "assistant", "content": " ".join(response_parts)}
                     )
-            # Check-in zurücksetzen wenn wieder Aktivität
+            # Reset check-in when activity resumes
             if idle < checkin_timeout:
                 checkin_done = False
 
     def _save_transcript(self, session: AudioSocketSession):
-        """Gesprächshistorie als JSON auf Disk speichern."""
+        """Save conversation history as JSON to disk."""
         import json as _json_mod
         from datetime import datetime as _dt, timezone as _tz
 
@@ -979,7 +979,7 @@ class AudioSocketServer:
             logger.error(f"[{session.uuid}] Failed to save transcript: {exc}")
 
     def _enqueue_async_worker(self, transcript_data: dict):
-        """Job in die Async-Worker SQLite-Queue eintragen."""
+        """Insert a job into the async-worker SQLite queue."""
         if ASYNC_WORKER_DISABLED:
             return
         try:

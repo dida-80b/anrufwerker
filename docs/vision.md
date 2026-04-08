@@ -1,34 +1,34 @@
 # anrufwerker - Vision
 
-## Produktvision
+## Product vision
 
-**anrufwerker** ist ein Telefon-Assistent für kleine Unternehmen (Handwerker, Praxen, KMU), der eingehende Anrufe automatisiert annimmt, Kundenanliegen erfasst und weiterverarbeitet.
+**anrufwerker** is a phone assistant for small businesses (tradespeople, medical practices, SMEs) that automatically answers inbound calls, captures customer requests, and routes them for follow-up.
 
-## Zielgruppe
+## Target audience
 
-### Phase 1: Handwerker
-- Elektriker, Installateure, Maler, Tischler
-- 1-10 Mitarbeiter
-- typische Anfragen: Terminvereinbarung, Preisauskunft, Auftragsstatus
+### Phase 1: Tradespeople
+- Electricians, plumbers, painters, carpenters
+- 1–10 employees
+- Typical requests: appointment booking, price enquiries, job status
 
-### Phase 2: Erweiterungen
-- Arztpraxen (Terminvereinbarung, Rezeptanfragen)
-- KMU (allgemeine Anfragen, Weiterleitung)
+### Phase 2: Extensions
+- Medical practices (appointment booking, prescription requests)
+- SMEs (general enquiries, call routing)
 
-## Leitprinzipien
+## Guiding principles
 
-1. **Niedrige Latenz im Live-Call** - max. 2-3s Antwortzeit
-2. **Lokale Modelle** - ministral-3:14b-instruct-2512-q8_0 oder vergleichbar (via Ollama)
-3. **Trennung Live/Async** - schnelle Antwort im Call, langsame Operationen nachgelagert
-4. **Datensouveränität** - alle Daten in DE, keine US-Cloud
-5. **Idempotenz** - jeder Call hat idempotente Verarbeitung via call_id
-6. **Optionale Outbound-Automation** - nur kontrolliert, mission-basiert, policy-gesichert
+1. **Low latency on live calls** — max. 2–3s response time
+2. **Local models** — ministral-3:14b-instruct-2512-q8_0 or equivalent (via Ollama)
+3. **Separation of live and async** — fast reply in the call, slow operations post-call
+4. **Data sovereignty** — all data stored locally, no US cloud
+5. **Idempotency** — every call has idempotent processing via call_id
+6. **Optional outbound automation** — controlled only, mission-based, policy-protected
 
-## Was NICHT gemacht wird
+## What will NOT be done
 
-- Keine Preiszusagen ohne Bestätigung
-- Keine verbindlichen Terminbuchungen ohne Menschliche Bestätigung
-- Keine medizinischen Diagnosen
-- Keine sensitive Daten ohne explizite Einwilligung
+- No price commitments without confirmation
+- No binding appointment bookings without human confirmation
+- No medical diagnoses
+- No sensitive data without explicit consent
 
-Siehe: `docs/architecture.md` für die Umsetzung.
+See: `docs/architecture.md` for the implementation.

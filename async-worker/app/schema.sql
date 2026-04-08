@@ -1,6 +1,6 @@
 -- =============================================================================
--- Anrufwerker — Datenbankschema v2
--- SQLite (MVP), OIDC-ready, tenant-aware, OpenCloud/Kimai-vorbereitet
+-- anrufwerker — Database schema v2
+-- SQLite (MVP), OIDC-ready, tenant-aware, prepared for OpenCloud/Kimai
 -- =============================================================================
 
 PRAGMA journal_mode = WAL;
@@ -11,20 +11,20 @@ PRAGMA foreign_keys = ON;
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS tenants (
     id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-    slug            TEXT NOT NULL UNIQUE,           -- "malerbetrieb-dannerbeck"
+    slug            TEXT NOT NULL UNIQUE,           -- "painting-company-smith"
     name            TEXT NOT NULL,
     is_active       INTEGER NOT NULL DEFAULT 1,
-    config_path     TEXT,                           -- Pfad zur company_config JSON
+    config_path     TEXT,                           -- path to company_config JSON
     created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
 
-    -- OIDC: befüllen wenn SSO mit OpenCloud/Kimai gewünscht (MVP: leer)
+    -- OIDC: populate when SSO with OpenCloud/Kimai is desired (MVP: empty)
     oidc_issuer     TEXT,
     oidc_client_id  TEXT
 );
 
 -- -----------------------------------------------------------------------------
 -- USERS
--- Lokal + OIDC-fähig. password_hash NULL = nur per OIDC anmeldbar.
+-- Local + OIDC-capable. password_hash NULL = OIDC-only login.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_login_at   TEXT,
     password_changed_at TEXT,
 
-    -- OIDC-Identifikation (MVP: leer)
+    -- OIDC identity fields (MVP: empty)
     oidc_sub        TEXT,
     oidc_issuer     TEXT,
 
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- -----------------------------------------------------------------------------
 -- USER_SESSIONS
--- Server-side Sessions. Token wird SHA-256 gehasht gespeichert.
+-- Server-side sessions. Token is stored as SHA-256 hash.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_sessions (
     id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -59,14 +59,14 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     expires_at  TEXT NOT NULL,
     last_used_at TEXT,
-    revoked_at  TEXT,                               -- NULL = aktiv
+    revoked_at  TEXT,                               -- NULL = active
     ip_address  TEXT,
     user_agent  TEXT
 );
 
 -- -----------------------------------------------------------------------------
 -- API_TOKENS
--- Service-to-Service Auth (async-worker, sip-bridge, externe Tools).
+-- Service-to-service auth (async-worker, sip-bridge, external tools).
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS api_tokens (
     id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -75,23 +75,23 @@ CREATE TABLE IF NOT EXISTS api_tokens (
     token_hash  TEXT NOT NULL UNIQUE,
     created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     last_used_at TEXT,
-    expires_at  TEXT,                               -- NULL = kein Ablauf
-    revoked_at  TEXT                                -- NULL = aktiv
+    expires_at  TEXT,                               -- NULL = no expiry
+    revoked_at  TEXT                                -- NULL = active
 );
 
 -- -----------------------------------------------------------------------------
 -- CONTACTS
--- Personen/Firmen — unabhängig von einzelnen Anrufen.
--- Anrufwerker legt Leads an, nicht Kontakte direkt.
--- Kontakte entstehen manuell oder per späterer Integration.
+-- Persons / companies — independent of individual calls.
+-- anrufwerker creates leads, not contacts directly.
+-- Contacts are created manually or via later integration.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contacts (
     id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     display_name    TEXT NOT NULL,
     company_name    TEXT,
-    phone_raw       TEXT,                           -- wie eingegeben
-    phone_e164      TEXT,                           -- normalisiert: +4917612345678
+    phone_raw       TEXT,                           -- as entered
+    phone_e164      TEXT,                           -- normalised: +4917612345678
     email           TEXT,
     address_street  TEXT,
     address_plz     TEXT,
@@ -100,22 +100,22 @@ CREATE TABLE IF NOT EXISTS contacts (
     created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
 
-    -- Stub: spätere OpenCloud/CardDAV-Verknüpfung (MVP: leer)
+    -- Stub: future OpenCloud/CardDAV link (MVP: empty)
     opencloud_contact_id    TEXT,
     carddav_book_id         TEXT
 );
 
 -- -----------------------------------------------------------------------------
 -- CALLS
--- Rohdaten jedes Anrufs. Befüllt vom async-worker nach Gesprächsende.
+-- Raw data for every call. Populated by async-worker after the call ends.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS calls (
     id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    session_uuid    TEXT NOT NULL UNIQUE,           -- aus sip-bridge
+    session_uuid    TEXT NOT NULL UNIQUE,           -- from sip-bridge
     direction       TEXT NOT NULL CHECK (direction IN ('inbound', 'outbound')),
 
-    -- Nummern: raw + normalisiert für Dubletten-Erkennung
+    -- Numbers: raw + normalised for duplicate detection
     caller_number       TEXT,
     caller_number_e164  TEXT,
     called_number       TEXT,
@@ -127,15 +127,15 @@ CREATE TABLE IF NOT EXISTS calls (
 
     -- Transcript
     transcript          TEXT,                       -- JSON blob (messages array)
-    transcript_path     TEXT,                       -- Pfad zur JSON-Datei
+    transcript_path     TEXT,                       -- path to JSON file
     transcript_status   TEXT NOT NULL DEFAULT 'pending'
                             CHECK (transcript_status IN ('pending', 'done', 'failed')),
     stt_provider        TEXT,                       -- "whisper-large-v3-turbo"
 
-    -- Extraktion durch async-worker
+    -- Extraction by async-worker
     extraction_status   TEXT NOT NULL DEFAULT 'pending'
                             CHECK (extraction_status IN ('pending', 'running', 'done', 'failed')),
-    extraction_error    TEXT,                       -- Fehlertext falls failed
+    extraction_error    TEXT,                       -- error text if failed
 
     call_status         TEXT NOT NULL DEFAULT 'completed'
                             CHECK (call_status IN ('completed', 'failed', 'abandoned')),
@@ -144,34 +144,34 @@ CREATE TABLE IF NOT EXISTS calls (
 
 -- -----------------------------------------------------------------------------
 -- LEADS
--- Strukturierte Daten aus Anrufen — via Ollama post-call extrahiert.
--- Entkoppelt von calls: ein Lead kann mehrere Anrufe umfassen.
+-- Structured data from calls — extracted post-call via Ollama.
+-- Decoupled from calls: one lead can span multiple calls.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS leads (
     id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
 
-    -- Optionaler Kontaktbezug (nach manueller Zuordnung oder Auto-Match)
+    -- Optional contact reference (after manual assignment or auto-match)
     contact_id      TEXT REFERENCES contacts(id) ON DELETE SET NULL,
 
-    -- Extraktion
+    -- Extraction
     extraction_status       TEXT NOT NULL DEFAULT 'pending'
                                 CHECK (extraction_status IN ('pending', 'done', 'failed')),
     extraction_confidence   REAL,                   -- 0.0–1.0
     needs_manual_review     INTEGER NOT NULL DEFAULT 0,
     missing_fields          TEXT,                   -- JSON array: ["caller_name", "address_plz"]
 
-    -- Kontaktdaten (aus Gespräch extrahiert)
+    -- Contact data (extracted from conversation)
     caller_name         TEXT,
     caller_phone_raw    TEXT,
     caller_phone_e164   TEXT,
 
-    -- Adresse (getrennt für Routenoptimierung)
+    -- Address (split for route optimisation)
     address_street  TEXT,
     address_plz     TEXT,
     address_city    TEXT,
 
-    -- Anliegen
+    -- Request
     description     TEXT,
     urgency         TEXT NOT NULL DEFAULT 'normal'
                         CHECK (urgency IN ('normal', 'urgent', 'emergency')),
@@ -180,66 +180,66 @@ CREATE TABLE IF NOT EXISTS leads (
     callback_needed INTEGER NOT NULL DEFAULT 1,
     escalated       INTEGER NOT NULL DEFAULT 0,
 
-    -- Workflow-Status
+    -- Workflow status
     status          TEXT NOT NULL DEFAULT 'new'
                         CHECK (status IN (
-                            'new',              -- frisch reingekommen
-                            'needs_review',     -- manuelle Prüfung nötig
-                            'qualified',        -- geprüft, echter Lead
-                            'callback_open',    -- Rückruf steht aus
-                            'scheduled',        -- Baubegehung terminiert
-                            'done',             -- abgeschlossen
-                            'closed_no_conversion', -- nicht zustande gekommen
-                            'spam'              -- Falschverbindung / Spam
+                            'new',                  -- just arrived
+                            'needs_review',         -- requires manual review
+                            'qualified',            -- reviewed, genuine lead
+                            'callback_open',        -- callback pending
+                            'scheduled',            -- site visit scheduled
+                            'done',                 -- completed
+                            'closed_no_conversion', -- did not convert
+                            'spam'                  -- wrong number / spam
                         )),
 
     notes           TEXT,
     created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
 
-    -- Stub: spätere Kalender-Integration (MVP: leer)
-    caldav_event_id         TEXT,                   -- Baubegehungs-Termin in CalDAV
-    opencloud_task_id       TEXT                    -- optionale Task-Verknüpfung
+    -- Stub: future calendar integration (MVP: empty)
+    caldav_event_id         TEXT,                   -- site-visit appointment in CalDAV
+    opencloud_task_id       TEXT                    -- optional task link
 );
 
 -- -----------------------------------------------------------------------------
 -- LEAD_CALLS
--- Junction-Tabelle: welche Anrufe gehören zu welchem Lead.
--- Erster Anruf erstellt den Lead (is_origin=1), Folgeanrufe ergänzen ihn.
+-- Junction table: which calls belong to which lead.
+-- First call creates the lead (is_origin=1), follow-up calls extend it.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS lead_calls (
     lead_id     TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
     call_id     TEXT NOT NULL REFERENCES calls(id) ON DELETE CASCADE,
-    is_origin   INTEGER NOT NULL DEFAULT 0,         -- 1 = der erzeugende Anruf
+    is_origin   INTEGER NOT NULL DEFAULT 0,         -- 1 = the originating call
     linked_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     PRIMARY KEY (lead_id, call_id)
 );
 
 -- -----------------------------------------------------------------------------
 -- LEAD_EVENTS
--- Audit-Trail: jede Änderung wird protokolliert.
--- actor_type klar definiert: wer hat was geändert.
+-- Audit trail: every change is logged.
+-- actor_type clearly defined: who changed what.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS lead_events (
     id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     lead_id     TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
 
-    -- Wer hat die Aktion ausgeführt?
+    -- Who performed the action?
     actor_type  TEXT NOT NULL
                     CHECK (actor_type IN ('system', 'ai', 'worker', 'user')),
-    actor_id    TEXT,                               -- user_id oder Service-Name
+    actor_id    TEXT,                               -- user_id or service name
 
     event_type  TEXT NOT NULL,                      -- "status_changed", "note_added",
                                                     -- "extraction_done", "contact_linked"
     old_value   TEXT,
     new_value   TEXT,
-    payload     TEXT,                               -- JSON: beliebige Zusatzdaten
+    payload     TEXT,                               -- JSON: arbitrary additional data
 
     created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
 -- -----------------------------------------------------------------------------
--- INDIZES
+-- INDEXES
 -- -----------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_calls_tenant         ON calls(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_calls_started_at     ON calls(started_at DESC);
@@ -268,7 +268,7 @@ CREATE INDEX IF NOT EXISTS idx_lead_events_created  ON lead_events(created_at DE
 
 -- -----------------------------------------------------------------------------
 -- SETTINGS
--- Admin-konfigurierbare Werte (Model, Prompt, Schwellenwerte etc.)
+-- Admin-configurable values (model, prompt, thresholds, etc.)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS settings (
     key         TEXT PRIMARY KEY,
@@ -277,58 +277,58 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
--- Extraktion (async-worker)
+-- Extraction (async-worker)
 INSERT OR IGNORE INTO settings (key, value, description) VALUES
-    ('ollama_url',           'http://127.0.0.1:11434/api/chat', 'Ollama API Endpoint (Extraktion)'),
-    ('ollama_model',         'mistral-small3.1:latest',          'Ollama Modell für Extraktion'),
-    ('confidence_threshold', '0.6',                              'Confidence-Schwelle für manuelle Prüfung (0.0–1.0)'),
-    ('duration_factor',      '15',                               'Sekunden pro Turn für Dauer-Schätzung'),
-    ('stt_provider',         'whisper-large-v3-turbo',           'STT-Provider-Label (nur Anzeige)');
+    ('ollama_url',           'http://127.0.0.1:11434/api/chat', 'Ollama API endpoint (extraction)'),
+    ('ollama_model',         'mistral-small3.1:latest',          'Ollama model for extraction'),
+    ('confidence_threshold', '0.6',                              'Confidence threshold for manual review (0.0–1.0)'),
+    ('duration_factor',      '15',                               'Seconds per turn for duration estimate'),
+    ('stt_provider',         'whisper-large-v3-turbo',           'STT provider label (display only)');
 
--- Telefon-KI (sip-bridge)
+-- Phone AI (sip-bridge)
 INSERT OR IGNORE INTO settings (key, value, description) VALUES
-    ('llm_url',              'http://host.docker.internal:11434/api/chat', 'Ollama URL (Telefon-KI)'),
-    ('llm_model',            'ministral-3:14b-instruct-2512-q8_0',  'Ollama Modell für Telefonie'),
+    ('llm_url',              'http://host.docker.internal:11434/api/chat', 'Ollama URL (phone AI)'),
+    ('llm_model',            'ministral-3:14b-instruct-2512-q8_0',  'Ollama model for telephony'),
     ('llm_temperature',      '0.1',                 'Temperature (0.0–1.0)'),
     ('llm_top_p',            '0.85',                'Top-P (0.0–1.0)'),
-    ('llm_num_predict',      '80',                  'Max. Tokens pro Antwort'),
-    ('llm_repeat_penalty',   '1.2',                 'Repeat Penalty'),
-    ('llm_num_ctx',          '2048',                'Kontext-Größe');
+    ('llm_num_predict',      '80',                  'Max. tokens per response'),
+    ('llm_repeat_penalty',   '1.2',                 'Repeat penalty'),
+    ('llm_num_ctx',          '2048',                'Context size');
 
--- Firmendaten (company config)
+-- Company data (company config)
 INSERT OR IGNORE INTO settings (key, value, description) VALUES
-    ('company_name',              '', 'Firmenname'),
-    ('company_owner',             '', 'Inhaber / Ansprechpartner'),
-    ('company_phone_callback',    '', 'Rückruf-Nummer des Betriebs'),
-    ('company_greeting',          '', 'Begrüßungstext des Bots'),
-    ('company_services',          '', 'Dienstleistungen (kommagetrennt)'),
-    ('company_opening_hours',     '', 'Öffnungszeiten'),
-    ('company_escalation_message','', 'Nachricht bei Eskalation'),
-    ('company_address',           '', 'Anschrift Betrieb'),
-    ('company_since',             '', 'Gründungsjahr'),
-    ('company_employee_count',    '', 'Mitarbeiterzahl'),
-    ('company_emergency_number',  '', 'Notfall-Nummer (optional, leer = deaktiviert)'),
-    ('company_bot_can',           'anfrage_aufnehmen,infos_geben,oeffnungszeiten', 'Bot-Fähigkeiten (kommagetrennt)'),
-    ('company_bot_cannot',        'preise_verhandeln,beschwerden,rechtliches',     'Bot-Grenzen (kommagetrennt)');
+    ('company_name',              '', 'Company name'),
+    ('company_owner',             '', 'Owner / contact person'),
+    ('company_phone_callback',    '', 'Business callback number'),
+    ('company_greeting',          '', 'Bot greeting text'),
+    ('company_services',          '', 'Services offered (comma-separated)'),
+    ('company_opening_hours',     '', 'Opening hours'),
+    ('company_escalation_message','', 'Message on escalation'),
+    ('company_address',           '', 'Business address'),
+    ('company_since',             '', 'Year founded'),
+    ('company_employee_count',    '', 'Number of employees'),
+    ('company_emergency_number',  '', 'Emergency number (optional, empty = disabled)'),
+    ('company_bot_can',           'anfrage_aufnehmen,infos_geben,oeffnungszeiten', 'Bot capabilities (comma-separated)'),
+    ('company_bot_cannot',        'preise_verhandeln,beschwerden,rechtliches',     'Bot limitations (comma-separated)');
 
 INSERT OR IGNORE INTO settings (key, value, description) VALUES
-    ('tts_engine',                  'piper',                     'TTS-Engine für Telefonie (piper oder edge)'),
-    ('tts_voice',                   'de-DE-SeraphinaMultilingualNeural', 'Edge-TTS Stimme (nur bei engine=edge)'),
+    ('tts_engine',                  'piper',                     'TTS engine for telephony (piper or edge)'),
+    ('tts_voice',                   'de-DE-SeraphinaMultilingualNeural', 'Edge-TTS voice (only when engine=edge)'),
     ('piper_url',                   'http://127.0.0.1:5150',    'Piper HTTP URL'),
-    ('piper_voice',                 'de_DE-thorsten-high',      'Piper Voice'),
-    ('stt_engine',                  'whisper-http',             'STT-Engine'),
+    ('piper_voice',                 'de_DE-thorsten-high',      'Piper voice'),
+    ('stt_engine',                  'whisper-http',             'STT engine'),
     ('whisper_url',                 'http://127.0.0.1:8090',    'Whisper HTTP URL'),
-    ('vad_speech_frames_to_start',  '2',                        'Frames bis Sprachstart'),
-    ('vad_silence_frames_to_end',   '12',                       'Stille-Frames bis Turn-Ende'),
-    ('vad_rms_threshold',           '260',                      'RMS-Schwelle Sprache'),
-    ('vad_barge_in_threshold',      '2000',                     'RMS-Schwelle Barge-In'),
-    ('vad_barge_in_frames',         '50',                       'Frames bis Barge-In'),
-    ('preroll_frames',              '8',                        'Preroll-Frames'),
-    ('min_user_rms_process',        '150',                      'Mindestrms für STT-Verarbeitung'),
-    ('inactivity_timeout',          '90',                       'Timeout bis Auflegen'),
-    ('checkin_timeout',             '10',                       'Timeout bis Check-In'),
-    ('max_tts_seconds_per_sentence','10.0',                     'Max. TTS-Sekunden pro Satz'),
-    ('max_tts_sentences_per_turn',  '2',                        'Max. TTS-Sätze pro Turn'),
-    ('max_tts_seconds_intro',       '8.0',                      'Max. Intro-Länge'),
-    ('no_regreet_after_intro',      'true',                     'Keine erneute Begrüßung'),
-    ('process_buffered_during_llm', 'false',                    'Audio während LLM weiterverarbeiten');
+    ('vad_speech_frames_to_start',  '2',                        'Frames until speech start'),
+    ('vad_silence_frames_to_end',   '12',                       'Silence frames until turn ends'),
+    ('vad_rms_threshold',           '260',                      'RMS threshold for speech'),
+    ('vad_barge_in_threshold',      '2000',                     'RMS threshold for barge-in'),
+    ('vad_barge_in_frames',         '50',                       'Frames until barge-in triggers'),
+    ('preroll_frames',              '8',                        'Preroll frames'),
+    ('min_user_rms_process',        '150',                      'Minimum RMS for STT processing'),
+    ('inactivity_timeout',          '90',                       'Timeout before hangup'),
+    ('checkin_timeout',             '10',                       'Timeout before check-in prompt'),
+    ('max_tts_seconds_per_sentence','10.0',                     'Max. TTS seconds per sentence'),
+    ('max_tts_sentences_per_turn',  '2',                        'Max. TTS sentences per turn'),
+    ('max_tts_seconds_intro',       '8.0',                      'Max. intro length in seconds'),
+    ('no_regreet_after_intro',      'true',                     'Do not re-greet after intro'),
+    ('process_buffered_during_llm', 'false',                    'Process buffered audio while LLM is running');
