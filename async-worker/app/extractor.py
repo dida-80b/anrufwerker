@@ -1,6 +1,6 @@
 """
-Lead-Extraktion via Ollama.
-Analysiert einen Gesprächs-Transcript und extrahiert strukturierte Felder.
+Lead extraction via Ollama.
+Analyses a conversation transcript and extracts structured fields.
 """
 
 import json
@@ -32,7 +32,7 @@ def _transcript_to_text(messages: list) -> str:
 
 
 def _normalize_phone(raw: str | None) -> str | None:
-    """Einfache E.164-Normalisierung für deutsche Nummern."""
+    """Simple E.164 normalisation for German phone numbers."""
     if not raw:
         return None
     digits = re.sub(r"\D", "", raw)
@@ -47,9 +47,9 @@ def _normalize_phone(raw: str | None) -> str | None:
 
 def extract(transcript_data: dict) -> dict:
     """
-    Extrahiert strukturierte Lead-Felder aus einem Transcript.
-    Gibt dict mit extrahierten Feldern zurück.
-    Bei Fehler: extraction_status='failed', alle Felder None.
+    Extract structured lead fields from a transcript.
+    Returns a dict with extracted fields.
+    On error: extraction_status='failed', all fields None.
     """
     messages = transcript_data.get("messages", [])
     if not messages:
@@ -78,14 +78,14 @@ def extract(transcript_data: dict) -> dict:
         resp.raise_for_status()
         raw_content = resp.json()["message"]["content"].strip()
 
-        # JSON aus Antwort extrahieren (auch wenn Modell Kommentar davor schreibt)
+        # Extract JSON from response (even if the model writes a comment before it)
         match = re.search(r"\{.*\}", raw_content, re.DOTALL)
         if not match:
             raise ValueError(f"No JSON in response: {raw_content[:200]}")
 
         data = json.loads(match.group())
 
-        # Schema-Validierung: fehlende Felder loggen
+        # Schema validation: log missing fields
         missing = _REQUIRED_FIELDS - data.keys()
         if missing:
             logger.warning(f"Ollama response missing expected fields: {missing}")

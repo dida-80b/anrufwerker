@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LLM-Client — Ollama (direkt) + System-Prompt-Builder.
+LLM client — Ollama (direct) + system prompt builder.
 """
 
 import json
@@ -15,14 +15,14 @@ from settings import get_setting, get_setting_float, get_setting_int
 
 logger = logging.getLogger("llm")
 
-# Satzgrenzen: bei diesen Zeichen direkt TTS triggern
+# Sentence boundaries: trigger TTS immediately at these characters
 _SENTENCE_END = re.compile(r'(?<=[.!?])\s+')
 
 
 def build_system_prompt(company_config: dict, caller_id: str = "") -> dict:
     """
-    Baut den vollständigen System-Prompt für inbound Anrufe aus der Company-Config.
-    Gibt {"prompt": str, "company": str, "greeting": str} zurück.
+    Build the full system prompt for inbound calls from the company config.
+    Returns {"prompt": str, "company": str, "greeting": str}.
     """
     name = company_config.get("company_name", "dem Betrieb")
     owner = company_config.get("owner_name", "dem Inhaber")
@@ -74,7 +74,7 @@ def build_system_prompt(company_config: dict, caller_id: str = "") -> dict:
 
     services_str = ", ".join(services) if services else ""
 
-    # Systemprompt: DB hat Vorrang, Datei ist Fallback
+    # System prompt: DB takes priority, file is fallback
     base_rules = get_setting("system_prompt_inbound")
     if not base_rules and PROMPT_INBOUND_MD.exists():
         base_rules = PROMPT_INBOUND_MD.read_text(encoding="utf-8").strip()
@@ -129,18 +129,18 @@ async def stream_response(
     system_prompt: str = "",
 ) -> AsyncGenerator[str, None]:
     """
-    Async generator: streamt Ollama-Antwort, liefert vollständige Sätze.
+    Async generator: streams Ollama response, yields complete sentences.
 
     Args:
-        session_uuid:  UUID des laufenden Anrufs (für Logging)
-        messages:      Vollständige Gesprächshistorie inkl. aktuellem User-Turn
-        mission:       Optionale Aufgabe (outbound calls)
-        system_prompt: Optionaler Override (inbound: aus company config)
+        session_uuid:  UUID of the active call (for logging)
+        messages:      Full conversation history including current user turn
+        mission:       Optional task (outbound calls)
+        system_prompt: Optional override (inbound: from company config)
     """
     if not messages:
         return
 
-    # LLM-Params per Call aus DB lesen (kein Restart nötig bei Änderungen)
+    # Read LLM params from DB per call (no restart needed when settings change)
     ollama_url   = get_setting("llm_url",           "OLLAMA_URL",   "http://host.docker.internal:11434/api/chat")
     ollama_model = get_setting("llm_model",         "OLLAMA_MODEL", "ministral-3:14b-instruct-2512-q8_0")
     temperature  = get_setting_float("llm_temperature",  "OLLAMA_TEMPERATURE",  0.1)
@@ -152,7 +152,7 @@ async def stream_response(
     if system_prompt:
         system_content = system_prompt
     else:
-        # prompt.md live lesen damit Änderungen sofort wirken (kein Neustart nötig)
+        # Read prompt.md live so changes take effect immediately (no restart needed)
         system_content = (
             PROMPT_MD.read_text(encoding="utf-8").strip()
             if PROMPT_MD.exists()
@@ -219,7 +219,7 @@ async def stream_response(
 
                     buffer += token
 
-                    # <think>...</think> vollständig entfernen (Reasoning-Modelle)
+                    # Strip <think>...</think> completely (reasoning models)
                     buffer = re.sub(r'<think>.*?</think>', '', buffer, flags=re.DOTALL)
                     if '<think>' in buffer:
                         continue
@@ -231,7 +231,7 @@ async def stream_response(
                             yield sentence
                     buffer = parts[-1]
 
-                # Restlichen Buffer ausgeben — offenen <think>-Block abschneiden
+                # Flush remaining buffer — truncate any open <think> block
                 if '<think>' in buffer:
                     buffer = buffer[:buffer.index('<think>')]
                 if buffer.strip():

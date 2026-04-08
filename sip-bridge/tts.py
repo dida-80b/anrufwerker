@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-TTS (Text-to-Speech) — Piper / edge-tts → Asterisk .sln Format.
-TTS_ENGINE=piper  → lokaler Piper-HTTP-Service (ONNX)
-TTS_ENGINE=edge   → edge-tts (Microsoft Azure Neural, benötigt Internet)
+TTS (Text-to-Speech) — Piper / edge-tts → Asterisk .sln format.
+TTS_ENGINE=piper  → local Piper HTTP service (ONNX)
+TTS_ENGINE=edge   → edge-tts (Microsoft Azure Neural, requires internet)
 """
 
 import asyncio
@@ -66,10 +66,10 @@ async def text_to_asterisk_audio(text: str, voice: str, sounds_dir: Path) -> Pat
 
 async def generate_tts_mp3(text: str, voice: str, sounds_dir: Path) -> Optional[Path]:
     """
-    Erzeugt TTS-Audio. Routing via TTS_ENGINE:
-      piper → Piper-HTTP-Service, gibt WAV zurück
-      edge  → edge-tts (Microsoft Azure Neural), gibt MP3 zurück
-    Alle Formate werden anschließend von convert_to_slin() verarbeitet.
+    Generate TTS audio. Routed via TTS_ENGINE:
+      piper → Piper HTTP service, returns WAV
+      edge  → edge-tts (Microsoft Azure Neural), returns MP3
+    All formats are then processed by convert_to_slin().
     """
     engine = get_setting("tts_engine", "TTS_ENGINE", "piper")
     registry = build_tts_registry(
@@ -118,7 +118,7 @@ async def convert_to_slin(audio_path: Path, sample_rate: int = 8000, channels: i
 
 
 def cleanup(path: Path):
-    """Löscht eine temporäre Audio-Datei."""
+    """Delete a temporary audio file."""
     try:
         path.unlink(missing_ok=True)
     except Exception as exc:

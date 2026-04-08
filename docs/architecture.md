@@ -1,6 +1,6 @@
-# anrufwerker - Architektur
+# anrufwerker - Architecture
 
-## Übersicht
+## Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -8,8 +8,8 @@
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  ┌──────────────┐     ┌──────────────┐     ┌──────────────────────┐   │
-│  │  Asterisk    │────▶│  sip-bridge  │────▶│  TTS (Antwort)       │   │
-│  │  / Fritzbox  │     │  (STT+LLM)   │     │  (Piper TTS)         │   │
+│  │  Asterisk    │────▶│  sip-bridge  │────▶│  TTS (response)      │   │
+│  │  / SIP trunk │     │  (STT+LLM)   │     │  (Piper TTS)         │   │
 │  └──────────────┘     └──────┬───────┘     └──────────────────────┘   │
 │                               │                                          │
 │                               ▼                                          │
@@ -21,38 +21,38 @@
 │                               ▼                                          │
 │                      ┌──────────────────┐                               │
 │                      │  Async Worker    │                               │
-│                      │  (Kontakte/Cal)  │                               │
+│                      │  (contacts/cal)  │                               │
 │                      └──────────────────┘                               │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Komponenten
+## Components
 
-### 1. Telefon-Gateway (External)
+### 1. Telephony gateway (external)
 
-- **Asterisk**: Klassische Telefonanlage, SIP-Trunk
-- **Fritzbox**: Consumer-Router mit Telefonie, CAPI over network
-- Anbindung via SIP/RTP oder Fritzbox CAPI
+- **Asterisk**: classic PBX, SIP trunk
+- **Fritz!Box**: consumer router with telephony (one tested option — any SIP trunk works)
+- Connection via SIP/RTP or any SIP provider that forwards calls to Asterisk ARI
 
-### 2. sip-bridge (Core Service)
+### 2. sip-bridge (core service)
 
-**Verantwortung**: Echtzeit-Verarbeitung während des Anrufs
+**Responsibility**: real-time processing during the call
 
-**Aufgaben**:
-- STT (Speech-to-Text): Whisper HTTP (whisper.cpp)
-- Intent/Slot Extraction: Lokales LLM via Ollama (ministral-3:14b-instruct-2512-q8_0)
-- Response Generation: Kontextbezogene Antwort
-- TTS: Piper (lokal) oder Edge TTS (online)
+**Tasks**:
+- STT (speech-to-text): Whisper HTTP (whisper.cpp)
+- Intent/slot extraction: local LLM via Ollama (ministral-3:14b-instruct-2512-q8_0)
+- Response generation: context-aware reply
+- TTS: Piper (local) or Edge TTS (online)
 
-**Anforderungen**:
-- Latenz: < 3s Ende-zu-Ende
-- Keine externen API-Calls während des Anrufs
-- State-Machine für Call-Flow
+**Requirements**:
+- Latency: < 3s end-to-end
+- No external API calls during the call
+- State machine for call flow
 
-**Technologie**: Python/FastAPI, Host-Ollama für LLM (kein Ollama-Container im Stack)
+**Technology**: Python/FastAPI, host Ollama for LLM (no Ollama container in the stack)
 
-### 3. Queue (Repository Pattern)
+### 3. Queue (repository pattern)
 
 **Interface**:
 ```python
@@ -63,34 +63,34 @@ class QueueRepository(Protocol):
     def is_processed(call_id) -> bool: ...
 ```
 
-**Implementierungen**:
-- `SqliteQueueRepository`: Für MVP, SQLite-basiert
-- `RedisQueueRepository`: Für Produktion (später)
-- `PostgresQueueRepository`: Für Produktion (später)
+**Implementations**:
+- `SqliteQueueRepository`: for MVP, SQLite-based
+- `RedisQueueRepository`: for production (future)
+- `PostgresQueueRepository`: for production (future)
 
-### 4. Async Worker
+### 4. Async worker
 
-**Verantwortung**: Nachgelagerte Verarbeitung
+**Responsibility**: post-call processing
 
-**Aufgaben**:
-- Kontaktsuche/erstellung
-- Kalender-Terminanfragen
-- CRM-Updates
-- E-Mail/SMS-Benachrichtigungen
-- Transcripts speichern
+**Tasks**:
+- Contact search / creation
+- Calendar appointment requests
+- CRM updates
+- Email / SMS notifications
+- Transcript storage
 
 **Features**:
-- Idempotenz-Key: call_id
-- Retry-Policy mit Exponential Backoff
-- Dead-Letter-Queue für fehlgeschlagene Jobs
+- Idempotency key: call_id
+- Retry policy with exponential backoff
+- Dead-letter queue for failed jobs
 
 ### 5. Storage (PostgreSQL, optional)
 
-- Tenant-Konfigurationen
-- Transcripts und Call-Logs
-- Trainingsdaten-Asset
+- Tenant configurations
+- Transcripts and call logs
+- Training data asset
 
-## API Contract: Live-Engine → Worker
+## API contract: live engine → worker
 
 ```json
 {
@@ -119,7 +119,7 @@ class QueueRepository(Protocol):
 }
 ```
 
-## Adapter-Interface für Externe Systeme
+## Adapter interface for external systems
 
 ```python
 class ContactAdapter(Protocol):
@@ -134,83 +134,83 @@ class CrmAdapter(Protocol):
     def log_interaction(data: dict) -> None: ...
 ```
 
-**Implementierungen**:
-- OpenClaw-Adapter (wenn verfügbar)
-- CardDAV für Kontakte
-- CalDAV für Kalender
-- Custom REST-APIs
+**Implementations**:
+- OpenClaw adapter (if available)
+- CardDAV for contacts
+- CalDAV for calendar
+- Custom REST APIs
 
-## Datenfluss
+## Data flow
 
-### Live-Path (während des Anrufs)
+### Live path (during the call)
 
 ```
-1. Anruf kommt rein (Asterisk/Fritzbox)
+1. Call arrives (Asterisk / SIP trunk)
 2. SIP Invite → sip-bridge
-3. Audio → STT → Transcript
-4. Transcript → Intent Detection (LLM)
-5. Slots extrahieren
-6. Kurze Antwort generieren (LLM)
-7. TTS → Audio → Caller
-8. Call beenden
-9. Daten in Queue schreiben
+3. Audio → STT → transcript
+4. Transcript → intent detection (LLM)
+5. Extract slots
+6. Generate short reply (LLM)
+7. TTS → audio → caller
+8. End call
+9. Write data to queue
 ```
 
-### Async-Path (nach dem Anruf)
+### Async path (after the call)
 
 ```
-1. Worker dequeue Job
-2. Idempotenz-Check (call_id bereits verarbeitet?)
-3. Kontakt suchen/erstellen
-4. Kalender-Slots prüfen (wenn Termin gewünscht)
-5. CRM-Log schreiben
-6. Callback/E-Mail planen (wenn erforderlich)
-7. Transcript speichern
-8. Job als completed markieren
+1. Worker dequeues job
+2. Idempotency check (call_id already processed?)
+3. Search / create contact
+4. Check calendar slots (if appointment requested)
+5. Write CRM log
+6. Schedule callback / email (if required)
+7. Save transcript
+8. Mark job as completed
 ```
 
-## Sicherheit
+## Security
 
-- **Keine Secrets in Code**: Alles über env vars
-- **TLS**: Alle Verbindungen verschlüsselt
-- **WAF**: Rate-Limiting, Input-Validation
-- **Audit-Log**: Alle API-Calls geloggt
+- **No secrets in code**: everything via env vars
+- **TLS**: all connections encrypted
+- **WAF**: rate limiting, input validation
+- **Audit log**: all API calls logged
 
-## Betriebsmodi
+## Operating modes
 
-### Mode A: Standalone (ohne OpenClaw)
+### Mode A: Standalone (without OpenClaw)
 
-- Direkte Anbindung an Asterisk/Fritzbox
-- Lokale Konfiguration (JSON)
-- SQLite Queue
+- Direct connection to Asterisk / SIP trunk
+- Local configuration (JSON)
+- SQLite queue
 
-### Mode B: Mit OpenClaw
+### Mode B: With OpenClaw
 
-- OpenClaw als Orchestrator
-- Adapter für Contacts/Calendar via OpenClaw
-- Shared Queue (Redis/Postgres)
+- OpenClaw as orchestrator
+- Adapters for contacts / calendar via OpenClaw
+- Shared queue (Redis / Postgres)
 
-Umschaltung via `OPENCLAW_ENABLED=true/false` env var.
+Switch via `OPENCLAW_ENABLED=true/false` env var.
 
 
 ### 6. outbound-orchestrator (optional)
 
-**Verantwortung**: Kontrollierte ausgehende Anrufe auf Basis expliziter Missionen.
+**Responsibility**: controlled outbound calls based on explicit missions.
 
-**Aufgaben**:
-- Mission validieren (Policy, Zeitfenster, Rate-Limits)
-- Outbound-Call starten (Asterisk)
-- Gesprächsergebnis als `direction=outbound` in Queue schreiben
+**Tasks**:
+- Validate mission (policy, time windows, rate limits)
+- Originate outbound call (Asterisk)
+- Write call result as `direction=outbound` to queue
 
-**Wichtig**: Keine autonomen Outbound-Kampagnen ohne explizite Freigabe.
+**Important**: no autonomous outbound campaigns without explicit approval.
 
-### Outbound-Path (optional)
+### Outbound path (optional)
 
 ```
-1. API bekommt Mission (to + task)
-2. Outbound-Policy prüft Erlaubnis
-3. Asterisk startet Anruf
-4. sip-bridge führt kurzen mission-basierten Dialog
-5. Ergebnis -> Queue (direction=outbound)
-6. Async Worker verarbeitet Follow-up
+1. API receives mission (to + task)
+2. Outbound policy checks permission
+3. Asterisk originates call
+4. sip-bridge conducts short mission-based dialogue
+5. Result → queue (direction=outbound)
+6. Async worker processes follow-up
 ```

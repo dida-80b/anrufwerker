@@ -66,15 +66,15 @@ set -e
 if [ "$HTTP_CODE" = "200" ]; then
     echo "  OK: Asterisk ARI responds (HTTP 200)"
 elif [ "$HTTP_CODE" = "401" ]; then
-    echo "  WARN: Asterisk ARI auth required (HTTP 401) — prüfe ASTERISK_ARI_PASSWORD"
+    echo "  WARN: Asterisk ARI auth required (HTTP 401) — check ASTERISK_ARI_PASSWORD"
 else
-    echo "  WARN: Asterisk ARI nicht erreichbar (HTTP ${HTTP_CODE}) — standalone-Profil aktiv?"
+    echo "  WARN: Asterisk ARI not reachable (HTTP ${HTTP_CODE}) — standalone profile active?"
 fi
 
 echo ""
 echo "=== Summary ==="
 if [ $FAIL_COUNT -eq 0 ]; then
-    echo "Alle Checks PASSED"
+    echo "All checks PASSED"
     exit 0
 else
     echo "FAILED: $FAIL_COUNT check(s)"

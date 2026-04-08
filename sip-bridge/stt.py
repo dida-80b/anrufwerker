@@ -2,8 +2,8 @@
 """
 STT (Speech-to-Text) — Whisper HTTP (GPU).
 
-Transkribiert Audio via whisper.cpp HTTP Server der auf der RX 7900 XTX läuft.
-Bei Fehler wird "" zurückgegeben — der Anruf bleibt aktiv, der Turn wird übersprungen.
+Transcribes audio via the whisper.cpp HTTP server.
+On error, "" is returned — the call stays active and the turn is skipped.
 """
 
 import logging
@@ -18,14 +18,14 @@ logger = logging.getLogger("stt")
 
 async def transcribe(wav_data: bytes, whisper_url: str) -> str:
     """
-    Transkribiert WAV-Audio via Whisper HTTP (GPU).
+    Transcribe WAV audio via Whisper HTTP (GPU).
 
     Args:
-        wav_data:    Rohe WAV-Bytes (8kHz oder 16kHz, 16-bit mono)
-        whisper_url: URL des whisper.cpp HTTP Servers (z.B. http://127.0.0.1:8090)
+        wav_data:    Raw WAV bytes (8 kHz or 16 kHz, 16-bit mono)
+        whisper_url: URL of the whisper.cpp HTTP server (e.g. http://127.0.0.1:8090)
 
     Returns:
-        Transkribierter Text oder "" bei Fehler/Stille.
+        Transcribed text, or "" on error / silence.
     """
     provider = get_stt_provider(
         whisper_url,

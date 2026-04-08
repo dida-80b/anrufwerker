@@ -1,67 +1,86 @@
 # anrufwerker
 
-KI-basierter Telefonassistent für kleine Unternehmen — Handwerker, Praxen, Dienstleister.
+AI-powered phone answering system for small businesses — tradespeople, medical practices, service providers.
 
-Nimmt Anrufe entgegen, erkennt Anliegen, antwortet in Echtzeit und schreibt Aufgaben in eine Queue zur Nachbearbeitung. Läuft vollständig lokal, keine Cloud erforderlich.
+Answers calls, recognises caller intent, responds in real time, and queues tasks for follow-up. Runs entirely locally — no cloud required.
 
 ---
 
-## Was der Stack macht
+## What the stack does
 
 ```
-Anrufer → Asterisk → SIP-Bridge → Whisper (STT) → Ollama (LLM) → Piper (TTS) → Anrufer
-                                         ↓
-                                   Async-Worker
-                                   (Extraktion, Queue)
-                                         ↓
-                                   Dashboard (Admin-UI)
+Caller → Asterisk → SIP-Bridge → Whisper (STT) → Ollama (LLM) → Piper (TTS) → Caller
+                                       ↓
+                                 Async-Worker
+                                 (extraction, queue)
+                                       ↓
+                                 Dashboard (admin UI)
 ```
 
 - **STT:** [whisper.cpp](https://github.com/ggerganov/whisper.cpp) via HTTP (Vulkan/ROCm/CUDA)
-- **LLM:** [Ollama](https://ollama.com) auf dem Host (kein Container nötig)
-- **TTS:** [Piper](https://github.com/rhasspy/piper) (lokal, ONNX) oder edge-tts (Microsoft Azure Neural, online)
-- **Telefonie:** Asterisk mit AudioSocket-Protokoll
+- **LLM:** [Ollama](https://ollama.com) on the host (no container needed)
+- **TTS:** [Piper](https://github.com/rhasspy/piper) (local, ONNX) or edge-tts (Microsoft Azure Neural, online)
+- **Telephony:** Asterisk with the AudioSocket protocol
 
 ---
 
-## Voraussetzungen
+## SIP / PBX requirements
+
+anrufwerker only needs **Asterisk ARI + AudioSocket**. The SIP source does not matter.
+
+Tested and known to work:
+
+| Source | Notes |
+|--------|-------|
+| **Fritz!Box** (AVM) | Common in Germany; use as SIP registrar in Asterisk |
+| **Sipgate, IONOS, Telekom SIP-Trunk** | Standard SIP trunks, configure as PJSIP endpoint |
+| **Twilio, Vonage / Nexmo** | Cloud SIP trunks, use SIP termination URI |
+| **Grandstream ATA / other ATA** | Connects analogue PSTN lines to SIP |
+| **3CX, FreePBX, other PBX** | Integrate anrufwerker as a SIP peer or ARI app |
+| **Direct SIP provider** | Any provider that delivers calls to Asterisk works |
+
+If you are already running Asterisk (or another PBX that can forward calls to Asterisk ARI), anrufwerker plugs in without changes.
+
+---
+
+## Prerequisites
 
 - Docker & Docker Compose
-- Ollama auf dem Host (`http://127.0.0.1:11434`)
-- Asterisk (lokal oder als Container mit `--profile standalone`)
-- Whisper-Modell: `ggml-large-v3-turbo.bin` (oder kleineres)
-- GPU empfohlen für Whisper (ROCm / Vulkan / CUDA)
+- Ollama on the host (`http://127.0.0.1:11434`)
+- Asterisk (local or as a container with `--profile standalone`)
+- Whisper model: `ggml-large-v3-turbo.bin` (or a smaller variant)
+- GPU recommended for Whisper (ROCm / Vulkan / CUDA)
 
 ---
 
 ## Quickstart
 
 ```bash
-# 1. Repository klonen
+# 1. Clone the repository
 git clone git@github.com:dida-80b/anrufwerker.git
 cd anrufwerker
 
-# 2. Environment konfigurieren
+# 2. Configure the environment
 cp .env.example .env
-# .env anpassen: Asterisk-Zugangsdaten, Ollama-Modell, Piper-Voice
+# Edit .env: Asterisk credentials, Ollama model, Piper voice
 
-# 3. LLM-Modell auf dem Host laden
+# 3. Pull the LLM model on the host
 ollama pull ministral-3:14b-instruct-2512-q8_0
 
-# 4. Piper-Voices herunterladen (Beispiel: Thorsten Deutsch)
+# 4. Download Piper voices (example: Thorsten German)
 mkdir -p data/piper-voices
 wget -P data/piper-voices \
   https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx \
   https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json
 
-# 5. Stack starten
+# 5. Start the stack
 docker compose up -d
 
-# 6. Health prüfen
+# 6. Check health
 curl http://localhost:8083/health   # Dashboard
 ```
 
-### Mit eigenem Asterisk + Whisper (standalone)
+### With bundled Asterisk + Whisper (standalone)
 
 ```bash
 docker compose --profile standalone up -d
@@ -71,22 +90,22 @@ docker compose --profile standalone up -d
 
 ## Services & Ports
 
-| Service | Port | Beschreibung |
-|---------|------|--------------|
+| Service | Port | Description |
+|---------|------|-------------|
 | `sip-bridge` | 5003 / AudioSocket 9093 | Asterisk AudioSocket + TTS/STT/LLM |
-| `piper` | 5150 | Piper TTS HTTP-Service |
-| `async-worker` | 8087 | Job-Queue Prozessor |
-| `dashboard` | 8083 | Admin-UI |
-| `whisper-gpu` | 8091 | Whisper STT (Profil: `standalone`) |
-| `asterisk` | 5060/8088 | PBX (Profil: `standalone`) |
+| `piper` | 5150 | Piper TTS HTTP service |
+| `async-worker` | 8087 | Job queue processor |
+| `dashboard` | 8083 | Admin UI |
+| `whisper-gpu` | 8091 | Whisper STT (profile: `standalone`) |
+| `asterisk` | 5060/8088 | PBX (profile: `standalone`) |
 
 ---
 
-## Konfiguration
+## Configuration
 
-### TTS-Engine
+### TTS engine
 
-Standard ist Piper (lokal, kein Internet):
+Default is Piper (local, no internet):
 
 ```env
 TTS_ENGINE=piper
@@ -94,59 +113,61 @@ PIPER_VOICE=de_DE-thorsten-high
 PIPER_URL=http://127.0.0.1:5150
 ```
 
-Alternativ edge-tts (Microsoft Azure Neural, benötigt Internet):
+Alternative: edge-tts (Microsoft Azure Neural, requires internet):
 
 ```env
 TTS_ENGINE=edge
 TTS_VOICE=de-DE-SeraphinaMultilingualNeural
 ```
 
-### Wichtige Variablen
+### Key variables
 
-| Variable | Beschreibung | Default |
-|----------|--------------|---------|
-| `TTS_ENGINE` | TTS-Engine (`piper` oder `edge`) | `piper` |
-| `PIPER_VOICE` | Piper-Stimme | `de_DE-thorsten-high` |
-| `OLLAMA_URL` | Ollama-Adresse | `http://host.docker.internal:11434/api/chat` |
-| `OLLAMA_MODEL` | LLM-Modell | `ministral-3:14b-instruct-2512-q8_0` |
-| `WHISPER_URL` | Whisper HTTP-Endpunkt | `http://127.0.0.1:8090` |
-| `STT_ENGINE` | STT-Engine | `whisper-http` |
-| `INBOUND_ENABLED` | Eingehende Anrufe aktivieren | `true` |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TTS_ENGINE` | TTS engine (`piper` or `edge`) | `piper` |
+| `PIPER_VOICE` | Piper voice | `de_DE-thorsten-high` |
+| `OLLAMA_URL` | Ollama address | `http://host.docker.internal:11434/api/chat` |
+| `OLLAMA_MODEL` | LLM model | `ministral-3:14b-instruct-2512-q8_0` |
+| `WHISPER_URL` | Whisper HTTP endpoint | `http://127.0.0.1:8090` |
+| `STT_ENGINE` | STT engine | `whisper-http` |
+| `INBOUND_ENABLED` | Enable inbound calls | `true` |
 
-Vollständige Referenz: `.env.example`
+Full reference: `.env.example`
 
-### Firmenkonfiguration
+### Company configuration
 
-Betriebsdaten (Name, Dienstleistungen, Öffnungszeiten, etc.) werden im Admin-Dashboard unter **Einstellungen → Firmendaten** gepflegt — keine JSON-Datei nötig.
+Business details (name, services, opening hours, etc.) are managed in the admin dashboard under **Settings → Company Data** — no JSON file required.
 
-Alternativ als Datei: Beispiel unter `docs/tenant.example.json`.
-
----
-
-## Admin-Dashboard
-
-Erreichbar unter `http://localhost:8083`
-
-Standard-Login:
-- E-Mail: `admin@anrufwerker.local`
-- Passwort: `anrufwerker-start`
-
-Sofort nach dem ersten Login ändern unter **Account → Passwort**.
+Alternatively as a file: see the example at `docs/tenant.example.json`.
 
 ---
 
-## Piper-Stimmen (Deutsch)
+## Admin Dashboard
 
-Empfohlene deutsche Stimmen:
+Available at `http://localhost:8083`
 
-| Stimme | Qualität | Größe |
-|--------|----------|-------|
-| `de_DE-thorsten-high` | Hoch | ~109 MB |
-| `de_DE-thorsten_emotional-medium` | Mittel | ~74 MB |
-| `de_DE-kerstin-low` | Niedrig (schnell) | ~61 MB |
-| `de_DE-ramona-low` | Niedrig (schnell) | ~61 MB |
+Default login:
+- Email: `admin@anrufwerker.local`
+- Password: `anrufwerker-start`
 
-Alle Piper-Stimmen: [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices)
+Change immediately after first login under **Account → Password**.
+
+---
+
+## Piper voices (German)
+
+Recommended German voices:
+
+| Voice | Quality | Size |
+|-------|---------|------|
+| `de_DE-thorsten-high` | High | ~109 MB |
+| `de_DE-thorsten_emotional-medium` | Medium | ~74 MB |
+| `de_DE-kerstin-low` | Low (fast) | ~61 MB |
+| `de_DE-ramona-low` | Low (fast) | ~61 MB |
+
+All Piper voices: [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices)
+
+English voices are also available — swap the voice and update the system prompt for English calls.
 
 ---
 
@@ -157,24 +178,24 @@ docker compose --profile monitoring up -d
 ```
 
 - Prometheus: `http://localhost:9092`
-- Grafana: `http://localhost:3001` (Standard-Passwort: `admin`)
+- Grafana: `http://localhost:3001` (default password: `admin`)
 
 ---
 
-## Datenschutz
+## Privacy
 
-- Anrufdaten werden lokal in `data/transcripts/` gespeichert
-- Keine Weitergabe an externe Dienste (außer bei `TTS_ENGINE=edge`)
-- `data/transcripts/` und Datenbanken sind in `.gitignore` ausgeschlossen
+- Call data is stored locally in `data/transcripts/`
+- No data is sent to external services (unless `TTS_ENGINE=edge`)
+- `data/transcripts/` and databases are excluded from `.gitignore`
 
 ## Support & Security
 
-- Support: siehe `SUPPORT.md`
-- Beiträge: siehe `CONTRIBUTING.md`
-- Sicherheitsmeldungen: siehe `SECURITY.md`
+- Support: see `SUPPORT.md`
+- Contributions: see `CONTRIBUTING.md`
+- Security reports: see `SECURITY.md`
 
 ---
 
-## Lizenz
+## License
 
 AGPL-3.0

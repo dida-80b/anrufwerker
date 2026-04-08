@@ -2,23 +2,23 @@
 """
 SIP Bridge
 ==========
-Verbindet Asterisk/Fritz!Box mit einem lokalen Whisper-STT + Ollama-LLM + edge-TTS.
+Connects Asterisk / SIP trunk to a local Whisper STT + Ollama LLM + Piper/edge TTS.
 
-Architektur:
-  Telefonnetz → Fritz!Box → Asterisk (SIP) → AudioSocket → sip-bridge
-    → Whisper (STT) → Ollama (LLM) → edge-tts (TTS) → Asterisk → Telefon
+Architecture:
+  PSTN → SIP trunk → Asterisk (SIP) → AudioSocket → sip-bridge
+    → Whisper (STT) → Ollama (LLM) → Piper/edge-tts (TTS) → Asterisk → phone
 
-Eingehender Anruf:
-  1. Anruf kommt über Fritz!Box → Asterisk per SIP
-  2. Asterisk schickt StasisStart-Event über ARI WebSocket an die Bridge
-  3. Bridge beantwortet den Channel und registriert die Inbound-Session
-  4. Asterisk verbindet den Channel mit dem AudioSocket-Server (bidirektionales Audio)
-  5. AudioSocket-Session: STT → Ollama → TTS in Echtzeit
+Inbound call:
+  1. Call arrives via SIP trunk → Asterisk
+  2. Asterisk sends StasisStart event over ARI WebSocket to the bridge
+  3. Bridge answers the channel and registers the inbound session
+  4. Asterisk connects the channel to the AudioSocket server (bidirectional audio)
+  5. AudioSocket session: STT → Ollama → TTS in real time
 
-Ausgehender Anruf:
-  1. POST /call mit Zielrufnummer und Mission
-  2. Bridge originiiert Anruf via ARI (Asterisk → Fritz!Box → PSTN)
-  3. Asterisk verbindet bei Annahme mit AudioSocket-Session
+Outbound call:
+  1. POST /call with destination number and mission
+  2. Bridge originates call via ARI (Asterisk → SIP trunk → PSTN)
+  3. Asterisk connects to AudioSocket session when the remote answers
 """
 
 import asyncio
@@ -195,7 +195,7 @@ async def handle_ari_event(event: Dict):
 
         logger.info(f"[{channel_id}] Call started | {caller} -> {called} | outbound={is_outbound}")
 
-        # Merge with pre-existing state (outbound calls store webhook_url before connecting)
+        # Merge with pre-existing state (outbound calls store webhook_url before the channel connects)
         existing = active_calls.get(channel_id, {})
         active_calls[channel_id] = {
             "channel_id": channel_id,
@@ -300,7 +300,7 @@ async def startup():
     logger.info(f"  TTS voice:    {TTS_VOICE}")
     logger.info("=" * 50)
 
-    # DB mit Defaults aus JSON-Config + prompt_inbound.md befüllen (INSERT OR IGNORE)
+    # Seed DB with defaults from JSON config + prompt_inbound.md (INSERT OR IGNORE)
     seed_runtime_settings()
     seed_from_config(company_config)
     seed_system_prompt(PROMPT_INBOUND_MD)
@@ -310,9 +310,9 @@ async def startup():
         if cfg.get("company_name"):
             logger.info(f"  ** INBOUND AI ENABLED ** Company: {cfg['company_name']}")
         else:
-            logger.warning("  INBOUND_ENABLED=true aber kein company_name in DB/Config!")
+            logger.warning("  INBOUND_ENABLED=true but no company_name in DB/Config!")
 
-    # Inbound prompt builder — liest DB pro Anruf (live-updatebar ohne Restart)
+    # Inbound prompt builder — reads DB per call (live-updatable without restart)
     inbound_fn = None
     if INBOUND_ENABLED:
         inbound_fn = lambda cid: build_system_prompt(load_company_config(), cid)
@@ -372,8 +372,8 @@ async def serve_sound(filename: str):
 @app.get("/inbound/register")
 async def inbound_register(uuid: str, caller: str = ""):
     """
-    Wird von Asterisk per CURL vor dem AudioSocket-Connect aufgerufen.
-    Registriert die inbound Session mit Caller-ID und Company-Prompt.
+    Called by Asterisk via CURL before the AudioSocket connects.
+    Registers the inbound session with caller ID and company prompt.
     """
     if not audiosocket_server:
         return JSONResponse({"status": "error", "msg": "AudioSocket not running"}, status_code=503)
@@ -390,19 +390,19 @@ async def inbound_register(uuid: str, caller: str = ""):
         "company": result.get("company", ""),
         "greeting": result.get("greeting", ""),
     }
-    logger.info(f"[inbound] Registered UUID={uuid} caller={caller or '(unbekannt)'} company={result.get('company', '')}")
+    logger.info(f"[inbound] Registered UUID={uuid} caller={caller or '(unknown)'} company={result.get('company', '')}")
     return {"status": "ok", "uuid": uuid, "caller": caller}
 
 
 @app.get("/transcripts")
 async def list_transcripts():
-    """Listet alle gespeicherten Gesprächs-Transcripts."""
+    """List all stored conversation transcripts."""
     transcript_dir = TRANSCRIPTS_PATH
     if not transcript_dir.exists():
         return {"transcripts": []}
     files = sorted(transcript_dir.glob("*.json"), reverse=True)
     result = []
-    for f in files[:50]:  # max 50 neueste
+    for f in files[:50]:  # max 50 most recent
         try:
             data = json.loads(f.read_text())
             result.append({
@@ -419,7 +419,7 @@ async def list_transcripts():
 
 @app.get("/transcripts/{filename}")
 async def get_saved_transcript(filename: str):
-    """Liest einen gespeicherten Transcript."""
+    """Read a stored transcript."""
     path = TRANSCRIPTS_PATH / Path(filename).name
     if not path.exists():
         return JSONResponse({"error": "not found"}, status_code=404)
@@ -428,7 +428,7 @@ async def get_saved_transcript(filename: str):
 
 @app.get("/call/{session_uuid}/transcript")
 async def get_transcript(session_uuid: str):
-    """Gibt die vollständige Gesprächshistorie einer laufenden Session zurück."""
+    """Return the full conversation history of an active session."""
     if not audiosocket_server:
         return JSONResponse({"error": "AudioSocket server not running"}, status_code=503)
     session = audiosocket_server.sessions.get(session_uuid)
@@ -445,8 +445,8 @@ async def get_transcript(session_uuid: str):
 @app.post("/call/{session_uuid}/instruct")
 async def instruct_session(session_uuid: str, mission: str = Form(...)):
     """
-    Setzt eine neue Mission/Aufgabe für eine laufende Session.
-    Die neue Aufgabe wird ab dem nächsten User-Turn aktiv.
+    Set a new mission/task for an active session.
+    The new task becomes active from the next user turn.
     """
     if not audiosocket_server:
         return JSONResponse({"error": "AudioSocket server not running"}, status_code=503)
@@ -461,10 +461,10 @@ async def instruct_session(session_uuid: str, mission: str = Form(...)):
 
 @app.get("/calls")
 async def list_active_calls():
-    """Listet alle aktiven Anrufe (laufende AudioSocket-Sessions + klingende Channels)."""
+    """List all active calls (running AudioSocket sessions + ringing channels)."""
     result = []
 
-    # Laufende Gespraeche (AudioSocket-Sessions)
+    # Active conversations (AudioSocket sessions)
     if audiosocket_server:
         for uuid, session in audiosocket_server.sessions.items():
             result.append({
@@ -475,7 +475,7 @@ async def list_active_calls():
                 "idle_seconds": round(time.time() - session.last_activity_time, 1),
             })
 
-    # Klingende / verbindende Channels ohne AudioSocket-Session
+    # Ringing / connecting channels without an AudioSocket session yet
     for channel_id, call in active_calls.items():
         result.append({
             "channel_id": channel_id,
@@ -495,9 +495,9 @@ async def create_call_endpoint(
     mission: str = Form(""),
 ):
     """
-    Initiiert einen ausgehenden Anruf via AudioSocket.
-    mission = Aufgabe/Mitteilung für den Bot (wird in den System-Prompt eingebettet).
-    Der LLM startet das Gespräch selbst — kein vorgefertigter Intro-Text.
+    Initiate an outbound call via AudioSocket.
+    mission = task/message for the bot (embedded in the system prompt).
+    The LLM starts the conversation itself — no pre-written intro text.
     """
     content = mission  # intern weiter als content/mission verwendet
     logger.info(f"Call request: {from_} -> {to} | mission={mission[:80]}")
@@ -538,7 +538,7 @@ async def create_call_endpoint(
 
 @app.delete("/call/{session_uuid}")
 async def hangup_call(session_uuid: str):
-    """Beendet einen laufenden Anruf sofort (sendet Hangup an Asterisk)."""
+    """Terminate an active call immediately (sends hangup to Asterisk)."""
     if not audiosocket_server:
         return JSONResponse({"error": "AudioSocket server not running"}, status_code=503)
 
@@ -546,7 +546,7 @@ async def hangup_call(session_uuid: str):
     if not session or not session.send_queue:
         return JSONResponse({"error": "Session not found"}, status_code=404)
 
-    # None in die Queue → sender_loop erkennt Hangup-Signal und sendet KIND_HANGUP (0x00) an Asterisk
+    # None in queue → sender_loop detects hangup signal and sends KIND_HANGUP (0x00) to Asterisk
     await session.send_queue.put(None)
     logger.info(f"[{session_uuid}] Hangup requested via API")
     return {"status": "hanging_up", "session_uuid": session_uuid}

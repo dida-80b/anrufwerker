@@ -21,8 +21,8 @@ app = FastAPI(title="anrufwerker-async-worker", version="0.2.0")
 
 
 async def _poll_loop():
-    """Pollt die Queue alle POLL_INTERVAL Sekunden und verarbeitet Jobs."""
-    logger.info(f"Worker-Loop gestartet (Intervall: {POLL_INTERVAL}s)")
+    """Poll the queue every POLL_INTERVAL seconds and process jobs."""
+    logger.info(f"Worker loop started (interval: {POLL_INTERVAL}s)")
     while True:
         try:
             conn = queue_db()
@@ -40,8 +40,8 @@ async def _poll_loop():
                 conn2.commit()
                 conn2.close()
                 if not updated:
-                    continue  # anderer Worker hat ihn schon
-                logger.info(f"Job gefunden: {row['call_id']}")
+                    continue  # another worker already claimed it
+                logger.info(f"Job found: {row['call_id']}")
                 await asyncio.get_event_loop().run_in_executor(
                     None, process_job, row["id"], row["call_id"], row["payload"]
                 )
@@ -49,7 +49,7 @@ async def _poll_loop():
                 await asyncio.sleep(POLL_INTERVAL)
 
         except Exception as exc:
-            logger.error(f"Poll-Loop Fehler: {exc}")
+            logger.error(f"Poll loop error: {exc}")
             await asyncio.sleep(POLL_INTERVAL)
 
 
@@ -57,7 +57,7 @@ async def _poll_loop():
 async def startup():
     db = dashboard_db()
     db.close()
-    logger.info("Dashboard-DB initialisiert")
+    logger.info("Dashboard DB initialised")
     asyncio.create_task(_poll_loop())
 
 
@@ -91,7 +91,7 @@ def health() -> dict:
 
 @app.post("/worker/run-once")
 async def run_once() -> dict:
-    """Manuell einen Job verarbeiten (für Tests)."""
+    """Manually process one job (for testing)."""
     conn = queue_db()
     row = conn.execute(
         "SELECT id, call_id, payload FROM jobs WHERE status='queued' ORDER BY id LIMIT 1"
@@ -128,7 +128,7 @@ def job_status(call_id: str) -> dict:
 
 @app.get("/leads")
 def list_leads(limit: int = 50, status: str | None = None) -> dict:
-    """Schnelle Lead-Übersicht direkt aus der Dashboard-DB."""
+    """Quick lead overview directly from the dashboard DB."""
     db = dashboard_db()
     query = "SELECT id, caller_name, caller_phone_raw, address_city, description, status, urgency, created_at FROM leads"
     params = []

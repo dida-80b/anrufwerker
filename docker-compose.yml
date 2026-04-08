@@ -1,21 +1,21 @@
 # ============================================================
 # anrufwerker — Voice Agent Stack
 # ============================================================
-# Standardmäßig laufen: sip-bridge (Port 5003 / AudioSocket 9093),
-#   piper (Port 5150), async-worker, dashboard (Port 8083).
+# Default services: sip-bridge (port 5003 / AudioSocket 9093),
+#   piper (port 5150), async-worker, dashboard (port 8083).
 #
-# Asterisk + Whisper werden aus dem laufenden anrufwerker-Stack
-# mitgenutzt (network_mode: host, gleiche Host-Ports).
-# Für vollständig eigenständigen Betrieb: --profile standalone
+# Asterisk + Whisper are expected to run outside this stack
+# (network_mode: host, same host ports).
+# For a fully self-contained setup: --profile standalone
 #
-# TTS-Engine wechseln: TTS_ENGINE=piper (Standard) oder TTS_ENGINE=edge
+# Switch TTS engine: TTS_ENGINE=piper (default) or TTS_ENGINE=edge
 # ============================================================
 
 name: anrufwerker
 
 services:
 
-  # ── Piper TTS (Port 5150) ────────────────────────────────
+  # ── Piper TTS (port 5150) ────────────────────────────────
   piper:
     build:
       context: ./piper
@@ -71,7 +71,7 @@ services:
       - BRIDGE_PORT=5003
       - SOUNDS_DIR=/sounds
       - TRANSCRIPTS_PATH=/app/data/transcripts
-      # TTS: "piper" (Standard, lokal) | "edge" (Microsoft Azure Neural, online)
+      # TTS: "piper" (default, local) | "edge" (Microsoft Azure Neural, online)
       - TTS_ENGINE=${TTS_ENGINE:-piper}
       - TTS_VOICE=${TTS_VOICE:-de-DE-SeraphinaMultilingualNeural}
       - PIPER_URL=${PIPER_URL:-http://127.0.0.1:5150}
@@ -134,7 +134,7 @@ services:
       - POLL_INTERVAL_SECONDS=${POLL_INTERVAL_SECONDS:-10}
     restart: unless-stopped
 
-  # ── Dashboard / Admin UI (Port 8083) ───────────────────────
+  # ── Dashboard / Admin UI (port 8083) ───────────────────────
   dashboard:
     build:
       context: ./dashboard
@@ -151,10 +151,10 @@ services:
       - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:-anrufwerker-start}
     restart: unless-stopped
 
-  # ── Whisper GPU (optional — standalone-Profil) ───────────
-  # Standardmäßig wird das whisper-gpu aus anrufwerker mitgenutzt
-  # (WHISPER_URL=http://127.0.0.1:8090 zeigt auf den laufenden Container).
-  # Mit --profile standalone wird ein eigener Whisper auf Port 8091 gestartet.
+  # ── Whisper GPU (optional — standalone profile) ──────────
+  # By default, an external whisper-gpu instance is used
+  # (WHISPER_URL=http://127.0.0.1:8090 points to the running container).
+  # With --profile standalone, a dedicated Whisper starts on port 8091.
   whisper-gpu:
     build:
       context: ./whisper-gpu
@@ -190,9 +190,9 @@ services:
       retries: 3
       start_period: 15s
 
-  # ── Asterisk (optional — standalone-Profil) ──────────────
-  # Standardmäßig wird Asterisk aus anrufwerker mitgenutzt.
-  # Mit --profile standalone: eigener Asterisk mit Piper-Ports (9092/5002).
+  # ── Asterisk (optional — standalone profile) ─────────────
+  # By default, an external Asterisk instance is used.
+  # With --profile standalone: dedicated Asterisk with its own ports (9092/5002).
   asterisk:
     build:
       context: ./asterisk
@@ -215,7 +215,7 @@ services:
     profiles:
       - standalone
 
-  # ── Prometheus / Grafana (monitoring-Profil) ─────────────
+  # ── Prometheus / Grafana (monitoring profile) ────────────
   prometheus:
     image: prom/prometheus:latest
     container_name: anrufwerker-prometheus
