@@ -35,7 +35,7 @@ curl -u $ASTERISK_ARI_USER:$ASTERISK_ARI_PASSWORD \
 ```
 
 ### Lösung
-1. `.env` prüfen — `ASTERISK_ARI_USER` und `ASTERISK_ARI_PASSWORD` müssen mit `asterisk/etc/ari.conf` übereinstimmen
+1. `.env` prüfen — `ASTERISK_ARI_USER` und `ASTERISK_ARI_PASSWORD` müssen zur Asterisk-Template-Konfiguration passen
 2. Asterisk neu starten: `docker compose restart asterisk`
 
 ---
