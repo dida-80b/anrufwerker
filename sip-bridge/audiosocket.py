@@ -131,7 +131,7 @@ class AudioSocketServer:
         host: str = "0.0.0.0",
         port: int = 9090,
         whisper_url: str = "http://127.0.0.1:8090",
-        openclaw_callback: Optional[Callable[[str, str], Awaitable[str]]] = None,
+        llm_callback: Optional[Callable[[str, str], Awaitable[str]]] = None,
         tts_voice: str = "de-DE-SeraphinaMultilingualNeural",
         sounds_dir: Path = Path("/sounds"),
         transcripts_dir: Path = Path("/app/data/transcripts"),
@@ -142,7 +142,7 @@ class AudioSocketServer:
         self.host = host
         self.port = port
         self.whisper_url = whisper_url
-        self.openclaw_callback = openclaw_callback
+        self.llm_callback = llm_callback
         self.tts_voice = tts_voice
         self.sounds_dir = sounds_dir
         self.transcripts_dir = transcripts_dir
@@ -813,9 +813,9 @@ class AudioSocketServer:
         system_prompt: str = "",
     ):
         """Async generator: yields sentences from LLM (streaming) or echo fallback."""
-        if self.openclaw_callback:
+        if self.llm_callback:
             try:
-                async for sentence in self.openclaw_callback(
+                async for sentence in self.llm_callback(
                     session_uuid, messages, mission, system_prompt
                 ):
                     yield sentence
