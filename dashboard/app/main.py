@@ -93,7 +93,7 @@ _SETTINGS_SECTIONS = [
         ],
     },
     {
-        "id": "firma",
+        "id": "company",
         "title": "Company Data",
         "description": "Basic details, callback number and business profile.",
         "fields": [
@@ -111,7 +111,7 @@ _SETTINGS_SECTIONS = [
         ],
     },
     {
-        "id": "telefon",
+        "id": "phone-ai",
         "title": "Phone AI",
         "description": "Model, sampling and context for live telephony.",
         "fields": [
@@ -142,7 +142,7 @@ _SETTINGS_SECTIONS = [
         ],
     },
     {
-        "id": "extraktion",
+        "id": "extraction",
         "title": "Extraction",
         "description": "Post-call parsing, confidence and prompt for the async worker.",
         "fields": [
@@ -630,7 +630,7 @@ async def index(request: Request, status: str = "", q: str = ""):
 
 
 @app.get("/partial/anfragen", response_class=HTMLResponse)
-async def partial_anfragen(request: Request, status: str = "", q: str = ""):
+async def partial_leads(request: Request, status: str = "", q: str = ""):
     _require_role(request, "viewer")
     data = _load_index_data(status=status, q=q.strip())
     return _render(

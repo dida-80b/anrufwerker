@@ -24,10 +24,10 @@ def build_system_prompt(company_config: dict, caller_id: str = "") -> dict:
     Build the full system prompt for inbound calls from the company config.
     Returns {"prompt": str, "company": str, "greeting": str}.
     """
-    name = company_config.get("company_name", "dem Betrieb")
-    owner = company_config.get("owner_name", "dem Inhaber")
-    greeting = company_config.get("greeting", f"Guten Tag, Sie haben {name} erreicht. Was kann ich für Sie tun?")
-    escalation = company_config.get("escalation_message", f"{owner} ruft Sie zurück.")
+    name = company_config.get("company_name", "the business")
+    owner = company_config.get("owner_name", "the owner")
+    greeting = company_config.get("greeting", f"Hello, you have reached {name}. How can I help you?")
+    escalation = company_config.get("escalation_message", f"{owner} will call you back.")
     opening = company_config.get("opening_hours", "")
     services = company_config.get("services", [])
     bot_can = company_config.get("bot_can", [])
@@ -40,26 +40,26 @@ def build_system_prompt(company_config: dict, caller_id: str = "") -> dict:
 
     bot_can_labels = {
         "anfrage_aufnehmen": (
-            "Anfrage aufnehmen in dieser Reihenfolge: "
-            "1. Vollständigen Namen erfragen. "
-            "2. Adresse/Ort erfragen und Postleitzahl bestätigen (z.B. 'Musterstadt, Postleitzahl 80000?'). "
-            "3. Kurzes Anliegen aufnehmen (was soll gemacht werden). "
-            "4. Rückruf ankündigen: falls ANRUFER-NUMMER bekannt: "
-            f"'Darf ich Sie später unter dieser Nummer zurückrufen um Termine zur Baubegehung abzuklären?' — "
-            "bei Ablehnung korrekte Nummer aufnehmen und bestätigen. "
-            f"5. Abschließen: 'Ich gebe das an {owner} weiter und wir melden uns.' "
-            "KEIN Wunschtermin erfragen — Termine werden beim Rückruf abgeklärt."
+            "Capture the request in this order: "
+            "1. Ask for the full name. "
+            "2. Ask for the address or city and confirm the postal code, for example 'Sampletown, postal code 80000?'. "
+            "3. Capture a short description of the request. "
+            "4. Confirm the callback. If CALLER_NUMBER is available, say: "
+            f"'May we call you back later at this number to discuss next steps?' "
+            "If the caller refuses, collect and confirm the correct number. "
+            f"5. Close with: 'I will pass this on to {owner} and we will get back to you.' "
+            "Do NOT ask for a preferred appointment time. Scheduling is handled during the callback."
         ),
         "infos_geben": (
-            "Informationen zu Betrieb, Leistungen und Öffnungszeiten geben. "
-            "Halte dich an die konfigurierten Angaben. Erfinde nichts."
+            "Provide information about the business, services, and opening hours. "
+            "Stick to the configured details. Do not invent anything."
         ),
-        "oeffnungszeiten": "Öffnungszeiten nennen.",
+        "oeffnungszeiten": "Share the opening hours.",
     }
     bot_cannot_labels = {
-        "preise_verhandeln": "Preise nennen oder verhandeln",
-        "beschwerden": "Beschwerden entgegennehmen",
-        "rechtliches": "Rechtliche Fragen beantworten",
+        "preise_verhandeln": "Quote or negotiate prices",
+        "beschwerden": "Handle complaints",
+        "rechtliches": "Answer legal questions",
     }
 
     bot_can_custom = company_config.get("bot_can_custom", {})
@@ -67,7 +67,7 @@ def build_system_prompt(company_config: dict, caller_id: str = "") -> dict:
 
     can_lines = "\n".join(
         f"- {bot_can_labels.get(c, c)}" for c in bot_can
-    ) if bot_can else "- Allgemeine Auskünfte geben"
+    ) if bot_can else "- Provide general information"
     cannot_lines = "\n".join(
         f"- {bot_cannot_labels.get(c, c)}" for c in bot_cannot
     ) if bot_cannot else ""
@@ -79,41 +79,41 @@ def build_system_prompt(company_config: dict, caller_id: str = "") -> dict:
     if not base_rules and PROMPT_INBOUND_MD.exists():
         base_rules = PROMPT_INBOUND_MD.read_text(encoding="utf-8").strip()
 
-    prompt = f"""Du bist der KI-Telefonassistent von {name}.
-Du nimmst Anrufe entgegen für {owner}.
+    prompt = f"""You are the AI phone assistant for {name}.
+You are answering calls on behalf of {owner}.
 
-BEGRÜSSUNG:
-Wenn du "[GESPRÄCH BEGINNT]" erhältst, sage genau: "{greeting}"
-Danach NICHT erneut begrüßen, außer der Anruf wurde neu gestartet.
+GREETING:
+When you receive "[CALL STARTS]", say exactly: "{greeting}"
+Do NOT greet again unless the call was restarted.
 
-DU KANNST:
+YOU MAY:
 {can_lines}
 
-DU KANNST NICHT — ESKALIERE:
+YOU MAY NOT — ESCALATE:
 {cannot_lines}
-→ Sage dann: "{escalation}"
+Then say: "{escalation}"
 
-KRITISCHE REGELN:
-- PHONE_CALLBACK_BETRIEB ist die feste Betriebsnummer, NICHT die Kundennummer — niemals als Kundennummer ausgeben.
-- ANRUFER-NUMMER ist die Nummer des Anrufers — für Rückruf-Bestätigung nutzen.
-- Kein Wunschtermin erfragen — Termine werden beim Rückruf abgeklärt.
-- Nenne niemals erfundene oder unbestätigte Nummern.
+CRITICAL RULES:
+- PHONE_CALLBACK_BETRIEB is the company's fixed phone number, NOT the customer's number. Never present it as the customer's number.
+- ANRUFER-NUMMER is the caller's number and should be used for callback confirmation.
+- Do not ask for a preferred appointment slot. Scheduling happens later during the callback.
+- Never mention invented or unconfirmed numbers.
 """
 
     if emergency:
-        prompt += f"\nNOTFALL: {emergency}\n"
+        prompt += f"\nEMERGENCY: {emergency}\n"
     if opening:
-        prompt += f"\nÖFFNUNGSZEITEN: {opening}\n"
+        prompt += f"\nOPENING HOURS: {opening}\n"
     if services_str:
-        prompt += f"\nDIENSTLEISTUNGEN: {services_str}\n"
+        prompt += f"\nSERVICES: {services_str}\n"
     if company_since:
-        prompt += f"\nGEGRÜNDET: {company_since}\n"
+        prompt += f"\nFOUNDED: {company_since}\n"
     if company_address:
-        prompt += f"\nANSCHRIFT BETRIEB: {company_address}\n"
+        prompt += f"\nBUSINESS ADDRESS: {company_address}\n"
     if employee_count:
-        prompt += f"\nMITARBEITER: {employee_count}\n"
+        prompt += f"\nEMPLOYEES: {employee_count}\n"
     if caller_id:
-        prompt += f"\nANRUFER-NUMMER: {caller_id}\n"
+        prompt += f"\nCALLER_NUMBER: {caller_id}\n"
     if phone_callback:
         prompt += f"\nPHONE_CALLBACK_BETRIEB: {phone_callback}\n"
     if base_rules:
@@ -160,9 +160,9 @@ async def stream_response(
         )
         if mission:
             system_content += (
-                f"\n\nDeine Aufgabe für diesen Anruf: {mission}"
-                f"\nWenn du '[GESPRÄCH BEGINNT]' erhältst, starte sofort mit einer kurzen Begrüßung"
-                f" und erfülle deine Aufgabe. Maximal 1-2 Sätze."
+                f"\n\nYour task for this call: {mission}"
+                f"\nWhen you receive '[CALL STARTS]', begin immediately with a short greeting"
+                f" and complete your task. Use at most 1-2 sentences."
             )
 
     payload = {
@@ -192,7 +192,7 @@ async def stream_response(
                 if resp.status != 200:
                     body = await resp.text()
                     logger.error(f"[{session_uuid}] Ollama {resp.status}: {body[:200]}")
-                    yield "Entschuldigung, da ist etwas schiefgelaufen."
+                    yield "Sorry, something went wrong."
                     return
 
                 buffer = ""
@@ -239,4 +239,4 @@ async def stream_response(
 
     except Exception as exc:
         logger.error(f"[{session_uuid}] Ollama stream error: {exc}")
-        yield "Entschuldigung, kein Ollama erreichbar."
+        yield "Sorry, Ollama is not reachable."

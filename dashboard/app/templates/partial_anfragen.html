@@ -1,23 +1,23 @@
-<div id="anfragen-content"
+<div id="leads-content"
      hx-get="/partial/anfragen{% if active_filter or query %}?{% if active_filter %}status={{ active_filter|urlencode }}{% endif %}{% if active_filter and query %}&{% endif %}{% if query %}q={{ query|urlencode }}{% endif %}{% endif %}"
      hx-trigger="every 20s"
      hx-swap="outerHTML">
 
   <section class="stats-grid">
     <a href="/" class="stats-card {% if not active_filter %}active{% endif %}">
-      <div class="stats-label"><span>Gesamt</span><span>Alle</span></div>
+      <div class="stats-label"><span>Total</span><span>All</span></div>
       <div class="stats-value">{{ stats.total }}</div>
     </a>
     <a href="/?status=needs_review" class="stats-card {% if active_filter == 'needs_review' %}active{% endif %}">
-      <div class="stats-label"><span>Prüfen</span><span>Manuell</span></div>
+      <div class="stats-label"><span>Review</span><span>Manual</span></div>
       <div class="stats-value">{{ highlights.review }}</div>
     </a>
     <a href="/?status=callback_open" class="stats-card {% if active_filter == 'callback_open' %}active{% endif %}">
-      <div class="stats-label"><span>Offen</span><span>Rückruf</span></div>
+      <div class="stats-label"><span>Open</span><span>Callback</span></div>
       <div class="stats-value">{{ stats.callback_open }}</div>
     </a>
     <div class="stats-card">
-      <div class="stats-label"><span>Heute</span><span>Aktuell</span></div>
+      <div class="stats-label"><span>Today</span><span>Current</span></div>
       <div class="stats-value">{{ highlights.today }}</div>
     </div>
   </section>
@@ -26,16 +26,16 @@
     <div class="toolbar">
       <form class="search-form" method="get" action="/">
         {% if active_filter %}<input type="hidden" name="status" value="{{ active_filter }}">{% endif %}
-        <input type="text" name="q" value="{{ query }}" placeholder="Suche nach Name, Ort, Telefonnummer oder Anliegen">
-        <button type="submit">Filtern</button>
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by name, city, phone number, or request">
+        <button type="submit">Filter</button>
         {% if query or active_filter %}
-        <a class="ghost-button" href="/">Zurücksetzen</a>
+        <a class="ghost-button" href="/">Reset</a>
         {% endif %}
       </form>
     </div>
 
     <div class="pill-row">
-      <a href="{% if query %}/?q={{ query|urlencode }}{% else %}/{% endif %}" class="pill {% if not active_filter %}active{% endif %}">Alle</a>
+      <a href="{% if query %}/?q={{ query|urlencode }}{% else %}/{% endif %}" class="pill {% if not active_filter %}active{% endif %}">All</a>
       {% for status, label in statuses %}
       <a href="/?status={{ status }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pill {% if active_filter == status %}active{% endif %}">{{ label }}</a>
       {% endfor %}
@@ -46,13 +46,13 @@
       <table>
         <thead>
           <tr>
-            <th>Zeit</th>
-            <th>Anfrage</th>
-            <th>Telefon</th>
-            <th>Ort</th>
+            <th>Time</th>
+            <th>Lead</th>
+            <th>Phone</th>
+            <th>City</th>
             <th>Status</th>
-            <th>Priorität</th>
-            <th>Aktualisiert</th>
+            <th>Priority</th>
+            <th>Updated</th>
           </tr>
         </thead>
         <tbody>
@@ -60,10 +60,10 @@
           <tr>
             <td class="mono">{{ lead.created_fmt }}</td>
             <td>
-              <a class="lead-link" href="/lead/{{ lead.id }}">{{ lead.caller_name or "Unbekannt" }}</a>
+              <a class="lead-link" href="/lead/{{ lead.id }}">{{ lead.caller_name or "Unknown" }}</a>
               <div class="lead-sub">
-                {{ lead.description or "Kein Anliegen extrahiert" }}
-                {% if lead.needs_manual_review %} · manuelle Prüfung{% endif %}
+                {{ lead.description or "No request extracted" }}
+                {% if lead.needs_manual_review %} · manual review{% endif %}
               </div>
             </td>
             <td class="mono">{{ lead.caller_phone_raw or "—" }}</td>
@@ -75,7 +75,7 @@
             </td>
             <td>
               <span class="badge" data-color="{{ urgency_colors.get(lead.urgency, 'slate') }}">
-                {% if lead.urgency == "normal" %}Normal{% elif lead.urgency == "urgent" %}Dringend{% else %}Notfall{% endif %}
+                {% if lead.urgency == "normal" %}Normal{% elif lead.urgency == "urgent" %}Urgent{% else %}Emergency{% endif %}
               </span>
             </td>
             <td class="mono">{{ lead.updated_fmt }}</td>
@@ -85,7 +85,7 @@
       </table>
     </div>
     {% else %}
-    <div class="empty-state">Keine Anfragen gefunden. Sobald neue Leads eingehen, tauchen sie hier automatisch auf.</div>
+    <div class="empty-state">No leads found. New leads will appear here automatically as soon as they arrive.</div>
     {% endif %}
   </section>
 </div>

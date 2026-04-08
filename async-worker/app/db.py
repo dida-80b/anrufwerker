@@ -12,35 +12,35 @@ DASHBOARD_DSN = os.getenv("DASHBOARD_DSN", "/app/data/dashboard.db")
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 # Default extraction prompt (placeholder: {transcript})
-EXTRACTION_PROMPT_DEFAULT = """Du analysierst einen Telefon-Gesprächs-Transcript eines Handwerksbetriebs und extrahierst strukturierte Daten.
+EXTRACTION_PROMPT_DEFAULT = """You are analyzing a phone call transcript for a small business and extracting structured data.
 
 TRANSCRIPT:
 {transcript}
 
-Extrahiere folgende Felder aus dem Gespräch. Antworte NUR mit validem JSON, kein Text davor oder danach.
+Extract the following fields from the conversation. Reply with valid JSON only, with no text before or after it.
 
 {
-  "caller_name": "Vor- und Nachname oder null",
-  "caller_phone_raw": "Telefonnummer wie genannt oder null",
-  "address_street": "Straße und Hausnummer oder null",
-  "address_plz": "Postleitzahl (5 Ziffern) oder null",
-  "address_city": "Ort oder null",
-  "description": "Kurze Beschreibung des Anliegens in 1-2 Sätzen oder null",
+  "caller_name": "Full name or null",
+  "caller_phone_raw": "Phone number as spoken or null",
+  "address_street": "Street and house number or null",
+  "address_plz": "Postal code (5 digits) or null",
+  "address_city": "City or null",
+  "description": "Short description of the request in 1-2 sentences or null",
   "urgency": "normal | urgent | emergency",
   "callback_needed": true,
   "escalated": false,
   "confidence": 0.0,
   "missing_fields": [],
-  "notes": "Auffälligkeiten die ein Mitarbeiter wissen sollte oder null"
+  "notes": "Important observations a staff member should know, or null"
 }
 
-REGELN:
-- urgency "emergency" nur bei echten Notfällen (Wasserrohrbruch, Sturmschaden etc.)
-- urgency "urgent" wenn Anrufer ausdrücklich Dringlichkeit betont
-- confidence: 0.0-1.0, wie sicher bist du bei der Extraktion insgesamt
-- missing_fields: Liste der Felder die nicht ermittelt werden konnten
-- escalated: true wenn Bot eskaliert hat (Beschwerde, Preis, Rechtliches)
-- Gib KEINE erfundenen Werte an - lieber null als raten"""
+RULES:
+- Set urgency to "emergency" only for real emergencies such as burst pipes or storm damage
+- Set urgency to "urgent" when the caller explicitly stresses urgency
+- confidence must be 0.0-1.0 and reflect your overall extraction confidence
+- missing_fields must list the fields that could not be determined
+- escalated must be true when the bot escalated the call, for example due to complaints, pricing, or legal questions
+- Do NOT invent values. Use null instead of guessing"""
 
 
 def _now() -> str:

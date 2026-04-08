@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://anrufwerker.dev/schemas/call_result.schema.json",
   "title": "CallResult",
-  "description": "Schema für das Ergebnis eines abgeschlossenen Anrufs",
+  "description": "Schema for the result of a completed call",
   "type": "object",
   "required": [
     "call_id",
@@ -16,72 +16,72 @@
   "properties": {
     "call_id": {
       "$ref": "#/definitions/uuid",
-      "description": "Eindeutige ID des Anrufs (auch als Idempotency-Key)"
+      "description": "Unique ID of the call, also used as the idempotency key"
     },
     "tenant_id": {
       "type": "string",
-      "description": "ID des Tenants/Mandanten"
+      "description": "Tenant ID"
     },
     "caller_number": {
       "type": "string",
       "pattern": "^\\+?[0-9]{7,15}$",
-      "description": "Rufnummer des Anrufers (E.164 Format)"
+      "description": "Caller phone number in E.164 format"
     },
     "caller_name": {
       "type": "string",
-      "description": "Optional: Name des Anrufers falls ermittelt"
+      "description": "Optional caller name if identified"
     },
     "timestamp_start": {
       "type": "string",
       "format": "date-time",
-      "description": "Startzeitpunkt des Anrufs (ISO8601)"
+      "description": "Call start time (ISO8601)"
     },
     "timestamp_end": {
       "type": "string",
       "format": "date-time",
-      "description": "Endzeitpunkt des Anrufs (ISO8601)"
+      "description": "Call end time (ISO8601)"
     },
     "duration_seconds": {
       "type": "integer",
       "minimum": 0,
-      "description": "Dauer des Anrufs in Sekunden"
+      "description": "Call duration in seconds"
     },
     "intent": {
       "$ref": "#/definitions/Intent",
-      "description": "Erkannte Absicht des Anrufers"
+      "description": "Detected caller intent"
     },
     "transcript": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/TranscriptEntry"
       },
-      "description": "Vollständiges Transcript des Gesprächs"
+      "description": "Full transcript of the conversation"
     },
     "summary": {
       "type": "string",
       "maxLength": 500,
-      "description": "Zusammenfassung des Anrufs (optional)"
+      "description": "Optional summary of the call"
     },
     "action_required": {
       "$ref": "#/definitions/ActionRequired",
-      "description": "Erforderliche Folgeaktion"
+      "description": "Required follow-up action"
     },
     "callback_scheduled": {
       "type": "boolean",
-      "description": "Ob ein Rückruf geplant wurde"
+      "description": "Whether a callback was scheduled"
     },
     "appointment_requested": {
       "type": "boolean",
-      "description": "Ob ein Termin gewünscht wurde"
+      "description": "Whether an appointment was requested"
     },
     "recording_url": {
       "type": "string",
       "format": "uri",
-      "description": "URL zur Aufnahme (falls vorhanden, opt-in)"
+      "description": "Recording URL if available and enabled"
     },
     "metadata": {
       "type": "object",
-      "description": "Zusätzliche metadaten"
+      "description": "Additional metadata"
     },
     "direction": {
       "type": "string",
@@ -89,19 +89,19 @@
         "inbound",
         "outbound"
       ],
-      "description": "Richtung des Anrufs"
+      "description": "Call direction"
     },
     "mission_id": {
       "type": "string",
-      "description": "ID der Outbound-Mission"
+      "description": "Outbound mission ID"
     },
     "mission_type": {
       "type": "string",
-      "description": "Typ der Mission (z.B. appointment_confirmation)"
+      "description": "Mission type, for example appointment_confirmation"
     },
     "mission_status": {
       "type": "string",
-      "description": "Status der Outbound-Mission"
+      "description": "Outbound mission status"
     }
   },
   "definitions": {
@@ -128,13 +128,13 @@
             "voicemail",
             "unknown"
           ],
-          "description": "Name des erkannten Intents"
+          "description": "Name of the detected intent"
         },
         "confidence": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Konfidenz der Intent-Erkennung"
+          "description": "Intent detection confidence"
         },
         "slots": {
           "$ref": "#/definitions/Slots"
@@ -146,33 +146,33 @@
       "properties": {
         "service_type": {
           "type": "string",
-          "description": "Gewünschte Dienstleistung"
+          "description": "Requested service"
         },
         "desired_date": {
           "type": "string",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
-          "description": "Gewünschtes Datum (YYYY-MM-DD)"
+          "description": "Requested date (YYYY-MM-DD)"
         },
         "desired_time": {
           "type": "string",
           "pattern": "^[0-9]{2}:[0-9]{2}$",
-          "description": "Gewünschte Uhrzeit (HH:MM)"
+          "description": "Requested time (HH:MM)"
         },
         "caller_name": {
           "type": "string",
-          "description": "Name des Anrufers"
+          "description": "Caller name"
         },
         "caller_phone": {
           "type": "string",
-          "description": "Rückrufnummer"
+          "description": "Callback number"
         },
         "address": {
           "type": "string",
-          "description": "Adresse des Kunden"
+          "description": "Customer address"
         },
         "description": {
           "type": "string",
-          "description": "Beschreibung des Anliegens"
+          "description": "Description of the request"
         }
       }
     },
@@ -193,16 +193,16 @@
         },
         "text": {
           "type": "string",
-          "description": "Gesprochener/erkannter Text"
+          "description": "Spoken or recognized text"
         },
         "timestamp": {
           "type": "string",
           "format": "date-time",
-          "description": "Zeitstempel dieses Eintrags"
+          "description": "Timestamp of this entry"
         },
         "intent_partial": {
           "type": "string",
-          "description": "Partial intent (wenn während des Calls erkannt)"
+          "description": "Partial intent detected during the call"
         }
       }
     },
@@ -215,7 +215,7 @@
         "transfer",
         "escalation"
       ],
-      "description": "Erforderliche Folgeaktion nach dem Anruf"
+      "description": "Required follow-up action after the call"
     }
   }
 }

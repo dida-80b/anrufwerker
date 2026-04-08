@@ -714,10 +714,10 @@ class AudioSocketServer:
         session = self.sessions.get(session_uuid)
         if session and self._setting_bool("no_regreet_after_intro", "NO_REGREET_AFTER_INTRO", NO_REGREET_AFTER_INTRO) and len(session.messages) > 1:
             low = text.lower()
-            # Only filter genuine second greetings, NOT farewells (auf wiederhören/sehen)
-            if any(g in low for g in ["guten tag", "hallo"]) and not any(
+            # Only filter genuine second greetings, not farewells.
+            if any(g in low for g in ["hello", "hi", "good morning", "good afternoon"]) and not any(
                 f in low
-                for f in ["auf wiederhören", "auf wiedersehen", "tschüss", "tschüs"]
+                for f in ["goodbye", "bye", "talk soon", "see you"]
             ):
                 logger.info(f"[{session_uuid}] Re-greeting filtered: {text[:40]}")
                 return
@@ -826,7 +826,7 @@ class AudioSocketServer:
         last_user = next(
             (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
         )
-        yield f"Du hast gesagt: {last_user}"
+        yield f"You said: {last_user}"
 
     async def _start_session(self, send_queue: asyncio.Queue, session_uuid: str):
         """The LLM generates the greeting itself — no pre-written intro text."""
@@ -846,7 +846,7 @@ class AudioSocketServer:
             session.messages.append({"role": "assistant", "content": session.greeting})
         else:
             # Outbound / no config greeting: LLM generates the greeting
-            trigger = [{"role": "user", "content": "[GESPRÄCH BEGINNT]"}]
+            trigger = [{"role": "user", "content": "[CALL STARTS]"}]
             logger.info(
                 f"[{session_uuid}] Triggering LLM intro (mission: {session.mission[:60]})"
             )
@@ -870,7 +870,7 @@ class AudioSocketServer:
                     {"role": "assistant", "content": " ".join(response_parts)}
                 )
             else:
-                fallback = "Hallo! Ich bin für dich da."
+                fallback = "Hello. I am here to help."
                 await self._enqueue_tts(send_queue, session_uuid, fallback)
                 session.messages.append({"role": "assistant", "content": fallback})
 

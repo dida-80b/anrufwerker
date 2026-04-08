@@ -1,9 +1,9 @@
 {
   "$schema": "https://anrufwerker.dev/schemas/tenant.schema.json",
   "tenant_id": "tenant_example_001",
-  "name": "Muster-Handwerker GmbH",
-  "business_type": "handwerker",
-  "language": "de-DE",
+  "name": "Sample Trade Services Ltd.",
+  "business_type": "trades",
+  "language": "en-US",
   "timezone": "Europe/Berlin",
   "phone": {
     "fallback_transfer": "+49XXXXXXXXX",
@@ -38,46 +38,46 @@
     ]
   },
   "greeting": {
-    "opening": "Guten Tag, {firma_name} am Apparat. Wie kann ich Ihnen helfen?",
-    "no_match": "Entschuldigung, das habe ich nicht verstanden. Könnten Sie das bitte wiederholen?",
-    "transfer": "Einen Moment, ich verbinde Sie mit einem Mitarbeiter.",
-    "closing": "Vielen Dank für Ihren Anruf. Auf Wiedersehen."
+    "opening": "Hello, you have reached {company_name}. How can I help you?",
+    "no_match": "Sorry, I did not catch that. Could you repeat it?",
+    "transfer": "One moment, I will connect you to a staff member.",
+    "closing": "Thank you for your call. Goodbye."
   },
   "intents": {
     "appointment_request": {
       "enabled": true,
       "priority": 1,
-      "description": "Terminanfrage",
+      "description": "Appointment request",
       "slots": [
         "service_type",
         "desired_date",
         "desired_time"
       ],
-      "response": "Ich habe folgende Terminwunsch notiert: {service_type} am {desired_date} um {desired_time}. Ich werde das an unser Team weitergeben."
+      "response": "I have noted the requested appointment: {service_type} on {desired_date} at {desired_time}. I will pass this to our team."
     },
     "price_inquiry": {
       "enabled": true,
       "priority": 2,
-      "description": "Preisanfrage",
+      "description": "Price inquiry",
       "slots": [
         "service_type"
       ],
-      "response": "Für eine detaillierte Preisauskunft zu {service_type} müssten wir uns das vor Ort ansehen. Darf ich Ihren Namen und Ihre Telefonnummer aufnehmen?"
+      "response": "For a detailed quote for {service_type}, we would need to assess it on site. May I take your name and phone number?"
     },
     "status_inquiry": {
       "enabled": true,
       "priority": 3,
-      "description": "Auftragsstatus",
+      "description": "Order status",
       "slots": [
         "order_number"
       ],
-      "response": "Ich prüfe den Status Ihres Auftrags."
+      "response": "I am checking the status of your order."
     },
     "transfer": {
       "enabled": true,
       "priority": 99,
-      "description": "Weiterleitung an Mitarbeiter",
-      "response": "Ich verbinde Sie weiter."
+      "description": "Transfer to staff",
+      "response": "I will transfer you now."
     }
   },
   "policies": {
@@ -85,9 +85,9 @@
     "require_confirmation": true,
     "max_appointment_days": 60,
     "blocked_keywords": [
-      "preis",
-      "günstig",
-      "billig"
+      "price",
+      "cheap",
+      "discount"
     ],
     "callback_request": {
       "enabled": true,

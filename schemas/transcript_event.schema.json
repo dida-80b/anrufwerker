@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://anrufwerker.dev/schemas/transcript_event.schema.json",
   "title": "TranscriptEvent",
-  "description": "Schema für einzelne Transcript-Events während eines Live-Anrufs",
+  "description": "Schema for individual transcript events during a live call",
   "type": "object",
   "required": [
     "event_id",
@@ -14,25 +14,25 @@
   "properties": {
     "event_id": {
       "$ref": "#/definitions/uuid",
-      "description": "Eindeutige ID dieses Events"
+      "description": "Unique ID for this event"
     },
     "call_id": {
       "$ref": "#/definitions/uuid",
-      "description": "ID des übergeordneten Anrufs"
+      "description": "ID of the parent call"
     },
     "tenant_id": {
       "type": "string",
-      "description": "ID des Tenants"
+      "description": "Tenant ID"
     },
     "timestamp": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel des Events (ISO8601)"
+      "description": "Event timestamp (ISO8601)"
     },
     "sequence": {
       "type": "integer",
       "minimum": 0,
-      "description": "Sequenznummer des Events im Call"
+      "description": "Sequence number of the event within the call"
     },
     "role": {
       "type": "string",
@@ -41,43 +41,43 @@
         "assistant",
         "system"
       ],
-      "description": "Sprecher-Rolle"
+      "description": "Speaker role"
     },
     "text": {
       "type": "string",
-      "description": "Erkannter/gesprochener Text"
+      "description": "Recognized or spoken text"
     },
     "is_final": {
       "type": "boolean",
-      "description": "Ob dies der finale Text ist (false = interim)"
+      "description": "Whether this is the final text (false = interim)"
     },
     "confidence": {
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "description": "Konfidenz der Spracherkennung"
+      "description": "Speech recognition confidence"
     },
     "language": {
       "type": "string",
       "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
-      "description": "Erkannte Sprache (z.B. de, de-DE)"
+      "description": "Detected language, for example en or en-US"
     },
     "audio_duration_ms": {
       "type": "integer",
       "minimum": 0,
-      "description": "Dauer des Audio-Segments in Millisekunden"
+      "description": "Audio segment duration in milliseconds"
     },
     "intent": {
       "type": "object",
-      "description": "Erkannter Intent (nur bei assistant role relevant)"
+      "description": "Detected intent, relevant only for the assistant role"
     },
     "slots": {
       "type": "object",
-      "description": "Extrahierte Slots (nur bei assistant role relevant)"
+      "description": "Extracted slots, relevant only for the assistant role"
     },
     "metadata": {
       "type": "object",
-      "description": "Zusätzliche Metadaten"
+      "description": "Additional metadata"
     },
     "direction": {
       "type": "string",
