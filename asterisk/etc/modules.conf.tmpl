@@ -1,0 +1,24 @@
+[modules]
+autoload=yes
+; Unused channel drivers
+noload=chan_sip.so
+noload=chan_skinny.so
+noload=chan_mgcp.so
+noload=chan_unistim.so
+noload=chan_alsa.so
+noload=chan_oss.so
+; Unused CDR/CEL backends (no DB configured)
+noload=cdr_pgsql.so
+noload=cdr_radius.so
+noload=cdr_sqlite3_custom.so
+noload=cdr_tds.so
+noload=cel_radius.so
+noload=cel_sqlite3_custom.so
+noload=cel_tds.so
+; Unused voicemail backends
+noload=app_voicemail_imap.so
+noload=app_voicemail_odbc.so
+; Unused network modules
+noload=pbx_dundi.so
+noload=res_hep_rtcp.so
+noload=res_hep_pjsip.so

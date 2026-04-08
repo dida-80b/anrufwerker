@@ -1,0 +1,110 @@
+"""
+Datenbankzugriff — Queue-DB (jobs) und Dashboard-DB (calls/leads/settings).
+"""
+
+import os
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+
+QUEUE_DSN = os.getenv("QUEUE_DSN", "/app/data/queue.db")
+DASHBOARD_DSN = os.getenv("DASHBOARD_DSN", "/app/data/dashboard.db")
+SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+
+# Extraction-Prompt-Default (Platzhalter: {transcript})
+EXTRACTION_PROMPT_DEFAULT = """Du analysierst einen Telefon-Gesprächs-Transcript eines Handwerksbetriebs und extrahierst strukturierte Daten.
+
+TRANSCRIPT:
+{transcript}
+
+Extrahiere folgende Felder aus dem Gespräch. Antworte NUR mit validem JSON, kein Text davor oder danach.
+
+{
+  "caller_name": "Vor- und Nachname oder null",
+  "caller_phone_raw": "Telefonnummer wie genannt oder null",
+  "address_street": "Straße und Hausnummer oder null",
+  "address_plz": "Postleitzahl (5 Ziffern) oder null",
+  "address_city": "Ort oder null",
+  "description": "Kurze Beschreibung des Anliegens in 1-2 Sätzen oder null",
+  "urgency": "normal | urgent | emergency",
+  "callback_needed": true,
+  "escalated": false,
+  "confidence": 0.0,
+  "missing_fields": [],
+  "notes": "Auffälligkeiten die ein Mitarbeiter wissen sollte oder null"
+}
+
+REGELN:
+- urgency "emergency" nur bei echten Notfällen (Wasserrohrbruch, Sturmschaden etc.)
+- urgency "urgent" wenn Anrufer ausdrücklich Dringlichkeit betont
+- confidence: 0.0-1.0, wie sicher bist du bei der Extraktion insgesamt
+- missing_fields: Liste der Felder die nicht ermittelt werden konnten
+- escalated: true wenn Bot eskaliert hat (Beschwerde, Preis, Rechtliches)
+- Gib KEINE erfundenen Werte an - lieber null als raten"""
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def get_setting(key: str, default: str = "") -> str:
+    """Liest einen Setting-Wert aus der Dashboard-DB. Gibt default zurück bei Fehler oder leerem Wert."""
+    try:
+        Path(DASHBOARD_DSN).parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(DASHBOARD_DSN)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+        conn.close()
+        return row["value"] if row and row["value"] else default
+    except Exception:
+        return default
+
+
+def get_setting_float(key: str, default: float) -> float:
+    try:
+        return float(get_setting(key, str(default)))
+    except (ValueError, TypeError):
+        return default
+
+
+def get_setting_int(key: str, default: int) -> int:
+    try:
+        return int(get_setting(key, str(default)))
+    except (ValueError, TypeError):
+        return default
+
+
+def queue_db() -> sqlite3.Connection:
+    Path(QUEUE_DSN).parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(QUEUE_DSN)
+    conn.row_factory = sqlite3.Row
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS jobs (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            call_id    TEXT UNIQUE NOT NULL,
+            payload    TEXT NOT NULL,
+            status     TEXT NOT NULL DEFAULT 'queued',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    return conn
+
+
+def dashboard_db() -> sqlite3.Connection:
+    Path(DASHBOARD_DSN).parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DASHBOARD_DSN)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    if SCHEMA_PATH.exists():
+        conn.executescript(SCHEMA_PATH.read_text())
+    # Extraction-Prompt zu lang für SQL INSERT OR IGNORE — hier separat seeden
+    conn.execute(
+        "INSERT OR IGNORE INTO settings (key, value, description) VALUES (?, ?, ?)",
+        ("extraction_prompt", EXTRACTION_PROMPT_DEFAULT,
+         "Extraction-Prompt ({transcript} wird durch Gesprächstext ersetzt)"),
+    )
+    conn.commit()
+    return conn

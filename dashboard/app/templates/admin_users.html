@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Benutzer — Anrufwerker{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <div class="eyebrow">Admin</div>
+    <h1>Benutzer & Rechte</h1>
+    <p>Rollenmodell mit Admin, User und Viewer. Neue Passwörter erzwingen beim ersten Login eine Änderung.</p>
+  </div>
+</section>
+
+{% if saved %}
+<div class="alert success">Benutzerverwaltung aktualisiert.</div>
+{% endif %}
+{% if error %}
+<div class="alert error">{{ error }}</div>
+{% endif %}
+
+<div class="detail-grid" style="margin-bottom:20px;">
+  <article>
+    <h3>Neuen Benutzer anlegen</h3>
+    <form method="post" action="/admin/users" class="layout-grid">
+      <div class="field-grid" style="margin-bottom:12px;">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" name="display_name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>E-Mail</label>
+          <input type="email" name="email" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Rolle</label>
+          <select name="role">
+            {% for value, label in role_options %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Initiales Passwort</label>
+          <input type="text" name="password" value="{{ default_password }}" autocomplete="off">
+        </div>
+      </div>
+      <div><button type="submit">Benutzer anlegen</button></div>
+    </form>
+  </article>
+
+  <article>
+    <h3>Rollenmodell</h3>
+    <div class="field-grid">
+      <div class="field"><label>Admin</label><div>Voller Zugriff auf Benutzer, Einstellungen und Leads.</div></div>
+      <div class="field"><label>User</label><div>Darf Inbox lesen und Leads bearbeiten.</div></div>
+      <div class="field"><label>Viewer</label><div>Nur Lesezugriff für Büro oder Reporting.</div></div>
+      <div class="field"><label>Passwort-Policy</label><div>Zurückgesetzte Accounts müssen ihr Passwort beim ersten Login ändern.</div></div>
+    </div>
+  </article>
+</div>
+
+<article>
+  <h3>Bestehende Benutzer ({{ users | length }})</h3>
+  <div class="table-shell">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Benutzer</th>
+          <th>Rolle</th>
+          <th>Status</th>
+          <th>Letzter Login</th>
+          <th>Rolle ändern</th>
+          <th>Passwort / Aktiv</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>
+            <strong>{{ user.display_name }}</strong>
+            <div class="lead-sub mono">{{ user.email }}</div>
+          </td>
+          <td>
+            <span class="badge" data-color="{% if user.role == 'admin' %}blue{% elif user.role == 'user' %}green{% else %}slate{% endif %}">
+              {{ role_labels[user.role] }}
+            </span>
+          </td>
+          <td>
+            {% if user.is_active %}
+            <span class="badge" data-color="green">Aktiv</span>
+            {% else %}
+            <span class="badge" data-color="red">Inaktiv</span>
+            {% endif %}
+            {% if user.must_change_password %}
+            <div class="lead-sub" style="margin-top:4px;">PW-Wechsel offen</div>
+            {% endif %}
+          </td>
+          <td class="mono">{{ user.last_login_fmt }}</td>
+          <td>
+            <form method="post" action="/admin/users/{{ user.id }}/role" class="inline-form">
+              <select name="role">
+                {% for value, label in role_options %}
+                <option value="{{ value }}" {% if value == user.role %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit">OK</button>
+            </form>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <form method="post" action="/admin/users/{{ user.id }}/reset-password" class="inline-form">
+                <input type="text" name="password" value="{{ default_password }}" autocomplete="off" style="width:110px;">
+                <button type="submit">Reset</button>
+              </form>
+              <form method="post" action="/admin/users/{{ user.id }}/toggle">
+                <button type="submit" class="{% if user.is_active %}danger{% else %}secondary{% endif %}">
+                  {% if user.is_active %}Sperren{% else %}Aktivieren{% endif %}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</article>
+{% endblock %}

@@ -1,0 +1,143 @@
+{
+  "$schema": "https://anrufwerker.dev/schemas/tenant.schema.json",
+  "tenant_id": "tenant_example_001",
+  "name": "Muster-Handwerker GmbH",
+  "business_type": "handwerker",
+  "language": "de-DE",
+  "timezone": "Europe/Berlin",
+  "phone": {
+    "fallback_transfer": "+49XXXXXXXXX",
+    "business_hours": {
+      "timezone": "Europe/Berlin",
+      "monday": {
+        "start": "08:00",
+        "end": "17:00"
+      },
+      "tuesday": {
+        "start": "08:00",
+        "end": "17:00"
+      },
+      "wednesday": {
+        "start": "08:00",
+        "end": "17:00"
+      },
+      "thursday": {
+        "start": "08:00",
+        "end": "17:00"
+      },
+      "friday": {
+        "start": "08:00",
+        "end": "16:00"
+      },
+      "saturday": null,
+      "sunday": null
+    },
+    "after_hours_behavior": "voicemail",
+    "did_numbers": [
+      "+49XXXXXXXXX"
+    ]
+  },
+  "greeting": {
+    "opening": "Guten Tag, {firma_name} am Apparat. Wie kann ich Ihnen helfen?",
+    "no_match": "Entschuldigung, das habe ich nicht verstanden. Könnten Sie das bitte wiederholen?",
+    "transfer": "Einen Moment, ich verbinde Sie mit einem Mitarbeiter.",
+    "closing": "Vielen Dank für Ihren Anruf. Auf Wiedersehen."
+  },
+  "intents": {
+    "appointment_request": {
+      "enabled": true,
+      "priority": 1,
+      "description": "Terminanfrage",
+      "slots": [
+        "service_type",
+        "desired_date",
+        "desired_time"
+      ],
+      "response": "Ich habe folgende Terminwunsch notiert: {service_type} am {desired_date} um {desired_time}. Ich werde das an unser Team weitergeben."
+    },
+    "price_inquiry": {
+      "enabled": true,
+      "priority": 2,
+      "description": "Preisanfrage",
+      "slots": [
+        "service_type"
+      ],
+      "response": "Für eine detaillierte Preisauskunft zu {service_type} müssten wir uns das vor Ort ansehen. Darf ich Ihren Namen und Ihre Telefonnummer aufnehmen?"
+    },
+    "status_inquiry": {
+      "enabled": true,
+      "priority": 3,
+      "description": "Auftragsstatus",
+      "slots": [
+        "order_number"
+      ],
+      "response": "Ich prüfe den Status Ihres Auftrags."
+    },
+    "transfer": {
+      "enabled": true,
+      "priority": 99,
+      "description": "Weiterleitung an Mitarbeiter",
+      "response": "Ich verbinde Sie weiter."
+    }
+  },
+  "policies": {
+    "allow_direct_booking": false,
+    "require_confirmation": true,
+    "max_appointment_days": 60,
+    "blocked_keywords": [
+      "preis",
+      "günstig",
+      "billig"
+    ],
+    "callback_request": {
+      "enabled": true,
+      "max_per_day": 3
+    }
+  },
+  "integrations": {
+    "contact_adapter": {
+      "type": "carddav",
+      "config": {
+        "url": "${CARDDAV_URL}",
+        "username": "${CARDDAV_USERNAME}",
+        "password": "${CARDDAV_PASSWORD}"
+      }
+    },
+    "calendar_adapter": {
+      "type": "caldav",
+      "config": {
+        "url": "${CALDAV_URL}",
+        "username": "${CALDAV_USERNAME}",
+        "password": "${CALDAV_PASSWORD}"
+      }
+    },
+    "crm_adapter": {
+      "type": "none",
+      "config": {}
+    }
+  },
+  "storage": {
+    "transcripts_retention_days": 90,
+    "recordings_enabled": false,
+    "training_data_opt_in": false
+  },
+  "model_config": {
+    "stt_model": "small",
+    "llm_model": "lfm2:24b",
+    "llm_temperature": 0.3,
+    "llm_max_tokens": 80,
+    "tts_model": "silero"
+  },
+  "outbound_policy": {
+    "enabled": false,
+    "allowed_use_cases": [
+      "appointment_confirmation",
+      "missing_information_followup"
+    ],
+    "max_attempts": 2,
+    "require_human_approval_for": [
+      "price_negotiation",
+      "legal_commitments"
+    ]
+  }
+}

@@ -1,0 +1,229 @@
+# ============================================================
+# anrufwerker — Voice Agent Stack
+# ============================================================
+# Standardmäßig laufen: sip-bridge (Port 5003 / AudioSocket 9093),
+#   piper (Port 5150), async-worker, dashboard (Port 8083).
+#
+# Asterisk + Whisper werden aus dem laufenden anrufwerker-Stack
+# mitgenutzt (network_mode: host, gleiche Host-Ports).
+# Für vollständig eigenständigen Betrieb: --profile standalone
+#
+# TTS-Engine wechseln: TTS_ENGINE=piper (Standard) oder TTS_ENGINE=edge
+# ============================================================
+
+name: anrufwerker
+
+services:
+
+  # ── SIP Bridge ───────────────────────────────────────────
+  sip-bridge:
+    build:
+      context: ./sip-bridge
+      dockerfile: Dockerfile
+    container_name: anrufwerker-sip-bridge
+    network_mode: host
+    volumes:
+      - ./data/sounds:/sounds
+      - ./data/transcripts:/app/data/transcripts
+      - ./data/async-worker:/app/data:rw
+      - ./sip-bridge/prompt.md:/app/prompt.md:ro
+      - ./sip-bridge/prompt_inbound.md:/app/prompt_inbound.md:ro
+      - ./sip-bridge/audiosocket.py:/app/audiosocket.py:ro
+      - ./sip-bridge/audio_utils.py:/app/audio_utils.py:ro
+      - ./sip-bridge/bridge.py:/app/bridge.py:ro
+      - ./sip-bridge/config.py:/app/config.py:ro
+      - ./sip-bridge/llm.py:/app/llm.py:ro
+      - ./sip-bridge/observability.py:/app/observability.py:ro
+      - ./sip-bridge/stt.py:/app/stt.py:ro
+      - ./sip-bridge/stt_providers.py:/app/stt_providers.py:ro
+      - ./sip-bridge/tts.py:/app/tts.py:ro
+      - ./sip-bridge/tts_providers.py:/app/tts_providers.py:ro
+      - ./sip-bridge/settings.py:/app/settings.py:ro
+      - ./configs:/app/configs:ro
+    environment:
+      - ASTERISK_HOST=127.0.0.1
+      - ASTERISK_ARI_PORT=8088
+      - ASTERISK_ARI_USER=${ASTERISK_ARI_USER:-}
+      - ASTERISK_ARI_PASSWORD=${ASTERISK_ARI_PASSWORD:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BRIDGE_PORT=5003
+      - SOUNDS_DIR=/sounds
+      - TRANSCRIPTS_PATH=/app/data/transcripts
+      # TTS: "piper" (Standard, lokal) | "edge" (Microsoft Azure Neural, online)
+      - TTS_ENGINE=${TTS_ENGINE:-piper}
+      - TTS_VOICE=${TTS_VOICE:-de-DE-SeraphinaMultilingualNeural}
+      - PIPER_URL=${PIPER_URL:-http://127.0.0.1:5150}
+      - PIPER_VOICE=${PIPER_VOICE:-de_DE-thorsten-high}
+      - OPENCLAW_INCOMING_WEBHOOK=${OPENCLAW_INCOMING_WEBHOOK:-}
+      - FRITZBOX_PHONE_NUMBER=${FRITZBOX_PHONE_NUMBER:-}
+      - AUDIOSOCKET_PORT=9093
+      - VOSK_MODEL_PATH=${VOSK_MODEL_PATH:-/models/vosk-model-de-0.21}
+      - STT_ENGINE=${STT_ENGINE:-whisper-http}
+      - WHISPER_URL=${WHISPER_URL:-http://127.0.0.1:8090}
+      - ALLOW_WHISPER_HTTP_FALLBACK=${ALLOW_WHISPER_HTTP_FALLBACK:-true}
+      - WHISPER_HTTP_PRIMARY=${WHISPER_HTTP_PRIMARY:-true}
+      - OPENCLAW_CHAT_URL=${OPENCLAW_CHAT_URL:-}
+      - OPENCLAW_CHAT_TOKEN=${OPENCLAW_CHAT_TOKEN:-}
+      - OLLAMA_DIRECT=${OLLAMA_DIRECT:-false}
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434/api/chat}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3.5-tel:latest}
+      - INACTIVITY_TIMEOUT=${INACTIVITY_TIMEOUT:-90}
+      - CHECKIN_TIMEOUT=${CHECKIN_TIMEOUT:-10}
+      - FAST_STT_MODEL=${FAST_STT_MODEL:-small}
+      - VAD_SPEECH_FRAMES_TO_START=${VAD_SPEECH_FRAMES_TO_START:-2}
+      - VAD_SILENCE_FRAMES_TO_END=${VAD_SILENCE_FRAMES_TO_END:-12}
+      - VAD_RMS_THRESHOLD=${VAD_RMS_THRESHOLD:-260}
+      - VAD_BARGE_IN_THRESHOLD=${VAD_BARGE_IN_THRESHOLD:-2000}
+      - VAD_BARGE_IN_FRAMES=${VAD_BARGE_IN_FRAMES:-50}
+      - PREROLL_FRAMES=${PREROLL_FRAMES:-8}
+      - MAX_TTS_SECONDS_PER_SENTENCE=${MAX_TTS_SECONDS_PER_SENTENCE:-10.0}
+      - MAX_TTS_SENTENCES_PER_TURN=${MAX_TTS_SENTENCES_PER_TURN:-2}
+      - MAX_TTS_SECONDS_INTRO=${MAX_TTS_SECONDS_INTRO:-8.0}
+      - NO_REGREET_AFTER_INTRO=${NO_REGREET_AFTER_INTRO:-false}
+      - MIN_USER_RMS_PROCESS=${MIN_USER_RMS_PROCESS:-150}
+      - OLLAMA_TEMPERATURE=${OLLAMA_TEMPERATURE:-0.1}
+      - OLLAMA_TOP_P=${OLLAMA_TOP_P:-0.85}
+      - OLLAMA_NUM_PREDICT=${OLLAMA_NUM_PREDICT:-80}
+      - OLLAMA_REPEAT_PENALTY=${OLLAMA_REPEAT_PENALTY:-1.2}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-2048}
+      - INBOUND_ENABLED=${INBOUND_ENABLED:-true}
+      - COMPANY_CONFIG=${COMPANY_CONFIG:-/app/configs/malerbetrieb_dannerbeck.json}
+      - ASYNC_WORKER_QUEUE_DSN=${ASYNC_WORKER_QUEUE_DSN:-/app/data/queue.db}
+      - ASYNC_WORKER_DISABLED=${ASYNC_WORKER_DISABLED:-false}
+      - DASHBOARD_DSN=/app/data/dashboard.db
+    restart: unless-stopped
+
+  # ── Async Worker ─────────────────────────────────────────
+  async-worker:
+    build:
+      context: .
+      dockerfile: ./async-worker/Dockerfile
+    container_name: anrufwerker-async-worker
+    network_mode: host
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8087"]
+    volumes:
+      - ./data/async-worker:/app/data
+    environment:
+      - QUEUE_DSN=/app/data/queue.db
+      - DASHBOARD_DSN=/app/data/dashboard.db
+      - OLLAMA_URL=${OLLAMA_URL:-http://127.0.0.1:11434/api/chat}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral-small3.1:latest}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - POLL_INTERVAL_SECONDS=${POLL_INTERVAL_SECONDS:-10}
+    restart: unless-stopped
+
+  # ── Dashboard / Admin UI (Port 8083) ───────────────────────
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: anrufwerker-dashboard
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./data/async-worker:/app/data
+    environment:
+      - DASHBOARD_DSN=/app/data/dashboard.db
+      - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL:-admin@anrufwerker.local}
+      - DEFAULT_ADMIN_NAME=${DEFAULT_ADMIN_NAME:-Administrator}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:-anrufwerker-start}
+    restart: unless-stopped
+
+  # ── Whisper GPU (optional — standalone-Profil) ───────────
+  # Standardmäßig wird das whisper-gpu aus anrufwerker mitgenutzt
+  # (WHISPER_URL=http://127.0.0.1:8090 zeigt auf den laufenden Container).
+  # Mit --profile standalone wird ein eigener Whisper auf Port 8091 gestartet.
+  whisper-gpu:
+    build:
+      context: ./whisper-gpu
+      dockerfile: Dockerfile
+    container_name: anrufwerker-whisper-gpu
+    network_mode: host
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    group_add:
+      - "987"
+    volumes:
+      - ~/.openclaw/models:/models:ro
+      - whisper_shader_cache:/root/.cache/mesa_shader_cache
+    command:
+      - whisper-server
+      - -m
+      - /models/ggml-large-v3-turbo.bin
+      - -l
+      - de
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8091"
+      - --threads
+      - "4"
+    restart: unless-stopped
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8091/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── Asterisk (optional — standalone-Profil) ──────────────
+  # Standardmäßig wird Asterisk aus anrufwerker mitgenutzt.
+  # Mit --profile standalone: eigener Asterisk mit Piper-Ports (9092/5002).
+  asterisk:
+    build:
+      context: ./asterisk
+      dockerfile: Dockerfile
+    container_name: anrufwerker-asterisk
+    network_mode: host
+    environment:
+      FRITZBOX_IP: ${FRITZBOX_IP:-fritz.box}
+      FRITZBOX_SIP_USER: ${FRITZBOX_SIP_USER:-}
+      FRITZBOX_SIP_PASSWORD: ${FRITZBOX_SIP_PASSWORD:-}
+      FRITZBOX_PHONE_NUMBER: ${FRITZBOX_PHONE_NUMBER:-}
+      ASTERISK_ARI_USER: ${ASTERISK_ARI_USER:-}
+      ASTERISK_ARI_PASSWORD: ${ASTERISK_ARI_PASSWORD:-}
+      LOCAL_IP: ${LOCAL_IP:-127.0.0.1}
+      AUDIOSOCKET_PORT: 9092
+      BRIDGE_PORT: 5002
+    volumes:
+      - ./data/sounds:/usr/share/asterisk/sounds/custom
+    restart: unless-stopped
+    profiles:
+      - standalone
+
+  # ── Prometheus / Grafana (monitoring-Profil) ─────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: anrufwerker-prometheus
+    ports:
+      - "9092:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: anrufwerker-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  whisper_shader_cache:

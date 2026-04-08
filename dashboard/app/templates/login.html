@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Login — Anrufwerker{% endblock %}
+
+{% block auth_content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <section class="login-brand">
+      <div class="eyebrow" style="background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.18);color:white;">Dashboard-Zugang</div>
+      <h1>Anrufwerker<br>Control Room</h1>
+      <p style="max-width:360px;color:rgba(255,255,255,0.82);">Klare Übersicht für Leads, Benutzerrechte und Betriebs-Konfiguration. Nach Erstinstallation direkt mit Default-Admin anmelden und Passwort sofort ändern.</p>
+      <div style="margin-top:26px;padding:16px;border-radius:18px;background:rgba(255,255,255,0.12);">
+        <div style="font-weight:800;margin-bottom:6px;">Erststart</div>
+        <div class="hint" style="color:rgba(255,255,255,0.78);">Default-Login: {{ default_admin_email }} / {{ default_admin_password }}</div>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <div>
+        <strong style="display:block;font-size:1.2rem;">Anmelden</strong>
+        <div class="hint">Nur registrierte Benutzer mit aktiver Rolle erhalten Zugriff.</div>
+      </div>
+
+      {% if error %}
+      <div class="alert error">{{ error }}</div>
+      {% endif %}
+
+      {% if seeded %}
+      <div class="alert success">Default-Admin wurde angelegt. Bitte direkt mit diesem Zugang einloggen und Passwort ändern.</div>
+      {% endif %}
+
+      <form method="post" action="/login">
+        <input type="hidden" name="next" value="{{ next }}">
+        <label>
+          <div style="font-weight:800;margin-bottom:6px;">E-Mail</div>
+          <input type="email" name="email" value="{{ default_admin_email }}" autocomplete="username">
+        </label>
+        <label>
+          <div style="font-weight:800;margin-bottom:6px;">Passwort</div>
+          <input type="password" name="password" autocomplete="current-password">
+        </label>
+        <button type="submit">Login</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

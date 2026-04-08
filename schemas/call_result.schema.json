@@ -1,0 +1,221 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://anrufwerker.dev/schemas/call_result.schema.json",
+  "title": "CallResult",
+  "description": "Schema für das Ergebnis eines abgeschlossenen Anrufs",
+  "type": "object",
+  "required": [
+    "call_id",
+    "tenant_id",
+    "timestamp_start",
+    "direction",
+    "timestamp_end",
+    "intent",
+    "action_required"
+  ],
+  "properties": {
+    "call_id": {
+      "$ref": "#/definitions/uuid",
+      "description": "Eindeutige ID des Anrufs (auch als Idempotency-Key)"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "ID des Tenants/Mandanten"
+    },
+    "caller_number": {
+      "type": "string",
+      "pattern": "^\\+?[0-9]{7,15}$",
+      "description": "Rufnummer des Anrufers (E.164 Format)"
+    },
+    "caller_name": {
+      "type": "string",
+      "description": "Optional: Name des Anrufers falls ermittelt"
+    },
+    "timestamp_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Startzeitpunkt des Anrufs (ISO8601)"
+    },
+    "timestamp_end": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Endzeitpunkt des Anrufs (ISO8601)"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Dauer des Anrufs in Sekunden"
+    },
+    "intent": {
+      "$ref": "#/definitions/Intent",
+      "description": "Erkannte Absicht des Anrufers"
+    },
+    "transcript": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TranscriptEntry"
+      },
+      "description": "Vollständiges Transcript des Gesprächs"
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Zusammenfassung des Anrufs (optional)"
+    },
+    "action_required": {
+      "$ref": "#/definitions/ActionRequired",
+      "description": "Erforderliche Folgeaktion"
+    },
+    "callback_scheduled": {
+      "type": "boolean",
+      "description": "Ob ein Rückruf geplant wurde"
+    },
+    "appointment_requested": {
+      "type": "boolean",
+      "description": "Ob ein Termin gewünscht wurde"
+    },
+    "recording_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL zur Aufnahme (falls vorhanden, opt-in)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Zusätzliche metadaten"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "inbound",
+        "outbound"
+      ],
+      "description": "Richtung des Anrufs"
+    },
+    "mission_id": {
+      "type": "string",
+      "description": "ID der Outbound-Mission"
+    },
+    "mission_type": {
+      "type": "string",
+      "description": "Typ der Mission (z.B. appointment_confirmation)"
+    },
+    "mission_status": {
+      "type": "string",
+      "description": "Status der Outbound-Mission"
+    }
+  },
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "Intent": {
+      "type": "object",
+      "required": [
+        "name",
+        "confidence"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "appointment_request",
+            "price_inquiry",
+            "status_inquiry",
+            "complaint",
+            "general_inquiry",
+            "transfer_request",
+            "voicemail",
+            "unknown"
+          ],
+          "description": "Name des erkannten Intents"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Konfidenz der Intent-Erkennung"
+        },
+        "slots": {
+          "$ref": "#/definitions/Slots"
+        }
+      }
+    },
+    "Slots": {
+      "type": "object",
+      "properties": {
+        "service_type": {
+          "type": "string",
+          "description": "Gewünschte Dienstleistung"
+        },
+        "desired_date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "Gewünschtes Datum (YYYY-MM-DD)"
+        },
+        "desired_time": {
+          "type": "string",
+          "pattern": "^[0-9]{2}:[0-9]{2}$",
+          "description": "Gewünschte Uhrzeit (HH:MM)"
+        },
+        "caller_name": {
+          "type": "string",
+          "description": "Name des Anrufers"
+        },
+        "caller_phone": {
+          "type": "string",
+          "description": "Rückrufnummer"
+        },
+        "address": {
+          "type": "string",
+          "description": "Adresse des Kunden"
+        },
+        "description": {
+          "type": "string",
+          "description": "Beschreibung des Anliegens"
+        }
+      }
+    },
+    "TranscriptEntry": {
+      "type": "object",
+      "required": [
+        "role",
+        "text"
+      ],
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "user",
+            "assistant",
+            "system"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "description": "Gesprochener/erkannter Text"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Zeitstempel dieses Eintrags"
+        },
+        "intent_partial": {
+          "type": "string",
+          "description": "Partial intent (wenn während des Calls erkannt)"
+        }
+      }
+    },
+    "ActionRequired": {
+      "type": "string",
+      "enum": [
+        "none",
+        "callback",
+        "appointment_confirmation",
+        "transfer",
+        "escalation"
+      ],
+      "description": "Erforderliche Folgeaktion nach dem Anruf"
+    }
+  }
+}

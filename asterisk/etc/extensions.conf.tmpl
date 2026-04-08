@@ -1,0 +1,59 @@
+[general]
+static=yes
+writeprotect=no
+
+; ============================================================================
+; INBOUND: Call from Fritz!Box → Asterisk → Bridge
+; Routes to AI answering bot via AudioSocket
+; ============================================================================
+[from-fritzbox]
+exten => _X.,1,NoOp(Inbound call: $${CALLERID(num)} -> $${EXTEN})
+ same => n,Goto(inbound-ai,$${EXTEN},1)
+exten => s,1,NoOp(Inbound call (s): $${CALLERID(num)})
+ same => n,Goto(inbound-ai,s,1)
+
+; ============================================================================
+; INBOUND AI: KI-Anrufbeantworter via AudioSocket
+; UUID Format: inbound-{callerid}-{uniqueid}
+; Bridge erkennt "inbound-" Prefix und lädt Company Config
+; ============================================================================
+[inbound-ai]
+exten => _X.,1,NoOp(Inbound AI: $${CALLERID(num)} -> $${EXTEN})
+ same => n,Set(CHANNEL(language)=de)
+ same => n,Set(AUDIOSOCKET_UUID=$${SHELL(cat /proc/sys/kernel/random/uuid | tr -d '\n')})
+ same => n,Set(NOTIFY=$${CURL(http://127.0.0.1:5000/inbound/register?uuid=$${AUDIOSOCKET_UUID}&caller=$${CALLERID(num)})})
+ same => n,NoOp(Bridge notified: $${NOTIFY})
+ same => n,Answer()
+ same => n,AudioSocket($${AUDIOSOCKET_UUID},127.0.0.1:9090)
+ same => n,Hangup()
+exten => s,1,NoOp(Inbound AI (s): $${CALLERID(num)})
+ same => n,Set(CHANNEL(language)=de)
+ same => n,Set(AUDIOSOCKET_UUID=$${SHELL(cat /proc/sys/kernel/random/uuid | tr -d '\n')})
+ same => n,Set(NOTIFY=$${CURL(http://127.0.0.1:5000/inbound/register?uuid=$${AUDIOSOCKET_UUID}&caller=$${CALLERID(num)})})
+ same => n,NoOp(Bridge notified: $${NOTIFY})
+ same => n,Answer()
+ same => n,AudioSocket($${AUDIOSOCKET_UUID},127.0.0.1:9090)
+ same => n,Hangup()
+
+; ============================================================================
+; BIDIRECTIONAL: Real-time conversation via AudioSocket
+; UUID is passed to bridge for session tracking
+; Bridge runs AudioSocket server on port 9090
+; Use $$ to escape $ in envsubst templates
+; ============================================================================
+[audiosocket-conversation]
+exten => s,1,NoOp(AudioSocket Conversation: $${CALLERID(num)})
+ same => n,Set(CHANNEL(language)=de)
+ same => n,Set(SESSION_UUID=$${EPOCH}-$${CALLERID(num)})
+ same => n,NoOp(Session UUID: $${SESSION_UUID})
+ same => n,Answer()
+ same => n,AudioSocket(client,127.0.0.1:9090,$${SESSION_UUID})
+ same => n,Hangup()
+
+; ============================================================================
+; OUTBOUND: Bridge-initiated calls via Stasis (existing)
+; ============================================================================
+[default]
+exten => _X.,1,Set(CHANNEL(language)=de)
+ same => n,Stasis(openclaw-bridge)
+ same => n,Hangup()

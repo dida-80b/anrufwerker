@@ -1,0 +1,33 @@
+# Secrets — niemals committen
+.env
+
+# Claude Code interne Settings (lokale Pfade, Tokens)
+.claude/
+
+# Laufzeit-Datenbanken
+data/async-worker/queue.db
+data/async-worker/dashboard.db
+data/*.db
+
+# Anrufdaten (Kundendaten)
+data/transcripts/
+data/sounds/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Piper-Voices (groß, separat herunterladen)
+data/piper-voices/*.onnx
+data/piper-voices/*.onnx.json
+
+# Docker
+.docker/
+
+# IDE
+.vscode/
+.idea/
+*.swp

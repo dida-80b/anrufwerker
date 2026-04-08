@@ -1,0 +1,41 @@
+{
+  "company_name": "Muster Handwerksbetrieb GmbH",
+  "owner_name": "Max Mustermann",
+  "phone_callback": "089000000000",
+  "company_since": "1990",
+  "company_address": "Musterstraße 1, 80000 Musterstadt",
+  "employee_count": "ca. 8 Mitarbeiter",
+  "language_default": "de",
+
+  "bot_can": [
+    "anfrage_aufnehmen",
+    "infos_geben",
+    "oeffnungszeiten"
+  ],
+
+  "bot_cannot": [
+    "preise_verhandeln",
+    "beschwerden",
+    "rechtliches"
+  ],
+
+  "escalation_message": "Herr Mustermann ruft Sie zurück.",
+
+  "emergency_number": null,
+
+  "greeting": "Guten Tag, Sie sind verbunden mit dem Muster Handwerksbetrieb. Ich bin die Telefon KI. Was kann ich für Sie tun?",
+
+  "services": [
+    "Innenrenovierung",
+    "Außenanstrich",
+    "Tapezieren",
+    "Fassadenreinigung",
+    "Verputzarbeiten"
+  ],
+
+  "opening_hours": "Montag bis Freitag, sieben bis siebzehn Uhr",
+
+  "bot_can_custom": {
+    "anfrage_aufnehmen": "Anfrage aufnehmen in dieser Reihenfolge: 1. Vollständigen Namen erfragen. 2. Adresse/Ort erfragen und Postleitzahl bestätigen. 3. Kurzes Anliegen aufnehmen (was soll gemacht werden). 4. Rückruf ankündigen: 'Darf ich Sie später unter der Nummer [ANRUFER-NUMMER] zurückrufen um Termine zur Baubegehung abzuklären?' — bei Ablehnung korrekte Nummer aufnehmen. 5. Abschließen: 'Ich gebe das weiter und wir melden uns.' KEIN Wunschtermin erfragen."
+  }
+}

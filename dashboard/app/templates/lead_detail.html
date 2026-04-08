@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ lead.caller_name or "Lead" }} — Anrufwerker{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="/">Inbox</a>
+  <span>›</span>
+  <span>{{ lead.caller_name or "Unbekannt" }}</span>
+</div>
+
+<section class="hero">
+  <div>
+    <div class="eyebrow">Lead-Detail</div>
+    <h1>{{ lead.caller_name or "Unbekannt" }}</h1>
+    <p>{{ lead.description or "Kein Anliegen extrahiert." }}</p>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+    <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ dict(statuses).get(lead.status, lead.status) }}</span>
+    <span class="badge" data-color="{{ urgency_colors.get(lead.urgency, 'slate') }}">
+      {% if lead.urgency == "normal" %}Normal{% elif lead.urgency == "urgent" %}Dringend{% else %}Notfall{% endif %}
+    </span>
+    {% if lead.needs_manual_review %}
+    <span class="badge" data-color="orange">Prüfen</span>
+    {% endif %}
+  </div>
+</section>
+
+<div class="detail-grid">
+  <div class="detail-stack">
+    <article>
+      <h3>Kontakt & Anfrage</h3>
+      <div class="field-grid">
+        <div class="field"><label>Telefon</label><div class="mono">{{ lead.caller_phone_raw or "—" }}</div></div>
+        <div class="field"><label>E.164</label><div class="mono">{{ lead.caller_phone_e164 or "—" }}</div></div>
+        <div class="field"><label>Straße</label><div>{{ lead.address_street or "—" }}</div></div>
+        <div class="field"><label>Ort</label><div>{{ lead.address_city or "—" }}{% if lead.address_plz %} {{ lead.address_plz }}{% endif %}</div></div>
+        <div class="field"><label>Betrieb</label><div>{{ lead.tenant_name or "—" }}</div></div>
+        <div class="field"><label>Konfidenz</label><div>{% if lead.extraction_confidence is not none %}{{ (lead.extraction_confidence * 100) | int }}%{% else %}—{% endif %}</div></div>
+        <div class="field"><label>Eingang</label><div class="mono">{{ lead.created_fmt }}</div></div>
+        <div class="field"><label>Geändert</label><div class="mono">{{ lead.updated_fmt }}</div></div>
+      </div>
+
+      {% if lead.missing_fields_list %}
+      <div class="alert warning" style="margin-top:14px;">Fehlende Felder: {{ lead.missing_fields_list | join(", ") }}</div>
+      {% endif %}
+
+      {% if lead.notes %}
+      <div class="field" style="margin-top:14px;">
+        <label>Notizen</label>
+        <div style="white-space:pre-line;">{{ lead.notes }}</div>
+      </div>
+      {% endif %}
+    </article>
+
+    {% if calls %}
+      {% for call in calls %}
+      <article class="call-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line);">
+          <div>
+            <strong style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">
+              Anruf{% if call.is_origin %} · Ursprung{% endif %}
+            </strong>
+            <div class="hint" style="margin-top:3px;">{{ call.started_fmt }} · {{ call.direction }}{% if call.duration_seconds %} · {{ call.duration_seconds }}s{% endif %} · {{ call.turn_count }} Turns</div>
+          </div>
+          <div class="mono">{{ call.caller_number or "—" }}</div>
+        </div>
+        <div class="transcript">
+          {% if call.messages %}
+            {% for msg in call.messages %}
+            <div class="msg {{ msg.role }}">
+              <div class="role">{% if msg.role == "assistant" %}Bot{% else %}Anrufer{% endif %}</div>
+              <div>{{ msg.content }}</div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="empty-state" style="padding:20px;">Kein Transcript verfügbar.</div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <div class="detail-stack">
+    <article>
+      <h3>Status</h3>
+      <div id="status-badge-{{ lead.id }}" class="status-badge-wrap" style="margin-bottom:12px;">
+        <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ dict(statuses).get(lead.status, lead.status) }}</span>
+      </div>
+      {% if can_edit %}
+      <form class="status-form"
+            hx-post="/lead/{{ lead.id }}/status"
+            hx-target="#status-badge-{{ lead.id }}"
+            hx-swap="outerHTML">
+        <select name="status">
+          {% for s, lbl in statuses %}
+          <option value="{{ s }}" {% if s == lead.status %}selected{% endif %}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">Setzen</button>
+      </form>
+      {% else %}
+      <div class="hint">Nur User und Admin dürfen Leads ändern.</div>
+      {% endif %}
+    </article>
+
+    <article>
+      <h3>Verlauf</h3>
+      <div id="notes-panel">
+        {% if events %}
+        <ul class="timeline">
+          {% for ev in events %}
+          <li class="timeline-item">
+            <small>{{ ev.created_fmt }}</small>
+            <strong style="font-size:0.84rem;">{{ ev.actor_id or "system" }}</strong>
+            <span style="font-size:0.84rem;">
+              {% if ev.event_type == "note_added" %}
+                Notiz: {{ ev.new_value }}
+              {% elif ev.event_type == "status_changed" %}
+                → {{ dict(statuses).get(ev.new_value, ev.new_value) }}
+              {% else %}
+                {{ ev.event_type }}{% if ev.new_value %}: {{ ev.new_value }}{% endif %}
+              {% endif %}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state" style="padding:20px;">Noch kein Verlauf.</div>
+        {% endif %}
+
+        {% if can_edit %}
+        <form class="note-form"
+              hx-post="/lead/{{ lead.id }}/note"
+              hx-target="#notes-panel"
+              hx-swap="innerHTML"
+              hx-on::after-request="this.reset()"
+              style="margin-top:12px;">
+          <input type="text" name="note" placeholder="Notiz hinzufügen…" autocomplete="off">
+          <button type="submit">+</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+  </div>
+</div>
+{% endblock %}

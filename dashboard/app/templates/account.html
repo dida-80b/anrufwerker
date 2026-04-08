@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Account — Anrufwerker{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <div class="eyebrow">Zugang</div>
+    <h1>Account & Passwort</h1>
+    <p>Passwortpflege für den aktuellen Benutzer. Beim Erststart ist ein Pflichtwechsel aktiv.</p>
+  </div>
+</section>
+
+{% if forced %}
+<div class="alert warning">Dieses Konto muss vor weiterer Nutzung ein neues Passwort setzen.</div>
+{% endif %}
+{% if saved %}
+<div class="alert success">Passwort aktualisiert.</div>
+{% endif %}
+{% if error %}
+<div class="alert error">{{ error }}</div>
+{% endif %}
+
+<div class="detail-grid">
+  <article class="detail-card">
+    <h3 style="margin-top:0;">Aktiver Benutzer</h3>
+    <div class="field-grid">
+      <div class="field"><label>Name</label><div>{{ current_user.display_name }}</div></div>
+      <div class="field"><label>E-Mail</label><div>{{ current_user.email }}</div></div>
+      <div class="field"><label>Rolle</label><div>{{ role_labels[current_user.role] }}</div></div>
+      <div class="field"><label>Tenant</label><div>{{ current_user.tenant_name or "—" }}</div></div>
+    </div>
+  </article>
+
+  <article class="detail-card">
+    <h3 style="margin-top:0;">Passwort ändern</h3>
+    <form method="post" action="/account/password" class="layout-grid">
+      <label>
+        <div style="font-weight:800;margin-bottom:8px;">Aktuelles Passwort</div>
+        <input type="password" name="current_password" autocomplete="current-password">
+      </label>
+      <label>
+        <div style="font-weight:800;margin-bottom:8px;">Neues Passwort</div>
+        <input type="password" name="new_password" autocomplete="new-password">
+      </label>
+      <label>
+        <div style="font-weight:800;margin-bottom:8px;">Neues Passwort bestätigen</div>
+        <input type="password" name="confirm_password" autocomplete="new-password">
+      </label>
+      <button type="submit">Passwort speichern</button>
+    </form>
+  </article>
+</div>
+{% endblock %}

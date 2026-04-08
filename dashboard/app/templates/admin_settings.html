@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen — Anrufwerker{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <div class="eyebrow">Admin</div>
+    <h1>Einstellungen</h1>
+    <p>Sprache, Modellparameter, Prompts und Extraktion.</p>
+  </div>
+</section>
+
+{% if saved %}
+<div class="alert success">Gespeichert. Änderungen greifen beim nächsten Worker-/Call-Zyklus.</div>
+{% endif %}
+
+{% if not settings %}
+<div class="alert warning">Settings-Tabelle noch leer — wird beim ersten Worker-Start initialisiert.</div>
+{% endif %}
+
+<form method="post" action="/admin/settings" class="section-grid">
+  <aside class="section-nav">
+    {% for section in sections %}
+    <a href="#{{ section.id }}">{{ section.title }}</a>
+    {% endfor %}
+    <button type="submit">Speichern</button>
+  </aside>
+
+  <div>
+    {% for section in sections %}
+    <div class="settings-section" id="{{ section.id }}">
+      <div class="settings-section-header">
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.description }}</p>
+      </div>
+      <div class="settings-fields">
+        {% for key, label, field_type in section.fields %}
+        <label class="settings-field {% if field_type == 'textarea' %}settings-field--wide{% endif %}">
+          <div>{{ label }}</div>
+          {% if field_type == "textarea" %}
+          <textarea name="{{ key }}">{{ settings.get(key, '') }}</textarea>
+          {% else %}
+          <input type="text" name="{{ key }}" value="{{ settings.get(key, '') }}" autocomplete="off">
+          {% endif %}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</form>
+
+<style>
+  .settings-field--wide { grid-column: 1 / -1; }
+</style>
+{% endblock %}
