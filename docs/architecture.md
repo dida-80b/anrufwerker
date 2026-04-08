@@ -41,7 +41,7 @@
 
 **Aufgaben**:
 - STT (Speech-to-Text): Whisper HTTP (whisper.cpp)
-- Intent/Slot Extraction: Lokales LLM via Ollama (qwen2.5:7b)
+- Intent/Slot Extraction: Lokales LLM via Ollama (ministral-3:14b-instruct-2512-q8_0)
 - Response Generation: Kontextbezogene Antwort
 - TTS: Piper (lokal) oder Edge TTS (online)
 

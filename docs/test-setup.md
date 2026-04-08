@@ -17,7 +17,7 @@ wget -P data/piper-voices \
   https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json
 
 # 3. Ollama-Modell auf dem Host laden
-ollama pull qwen2.5:7b
+ollama pull ministral-3:14b-instruct-2512-q8_0
 
 # 4. Stack starten
 docker compose up -d

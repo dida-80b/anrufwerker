@@ -142,7 +142,7 @@ async def stream_response(
 
     # LLM-Params per Call aus DB lesen (kein Restart nötig bei Änderungen)
     ollama_url   = get_setting("llm_url",           "OLLAMA_URL",   "http://host.docker.internal:11434/api/chat")
-    ollama_model = get_setting("llm_model",         "OLLAMA_MODEL", "qwen3.5-tel:latest")
+    ollama_model = get_setting("llm_model",         "OLLAMA_MODEL", "ministral-3:14b-instruct-2512-q8_0")
     temperature  = get_setting_float("llm_temperature",  "OLLAMA_TEMPERATURE",  0.1)
     top_p        = get_setting_float("llm_top_p",        "OLLAMA_TOP_P",        0.85)
     num_predict  = get_setting_int("llm_num_predict",    "OLLAMA_NUM_PREDICT",  80)

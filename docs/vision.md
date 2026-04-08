@@ -18,7 +18,7 @@
 ## Leitprinzipien
 
 1. **Niedrige Latenz im Live-Call** - max. 2-3s Antwortzeit
-2. **Lokale Modelle** - qwen2.5:7b oder vergleichbar (via Ollama)
+2. **Lokale Modelle** - ministral-3:14b-instruct-2512-q8_0 oder vergleichbar (via Ollama)
 3. **Trennung Live/Async** - schnelle Antwort im Call, langsame Operationen nachgelagert
 4. **Datensouveränität** - alle Daten in DE, keine US-Cloud
 5. **Idempotenz** - jeder Call hat idempotente Verarbeitung via call_id

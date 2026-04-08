@@ -288,7 +288,7 @@ INSERT OR IGNORE INTO settings (key, value, description) VALUES
 -- Telefon-KI (sip-bridge)
 INSERT OR IGNORE INTO settings (key, value, description) VALUES
     ('llm_url',              'http://host.docker.internal:11434/api/chat', 'Ollama URL (Telefon-KI)'),
-    ('llm_model',            'qwen3.5-tel:latest',  'Ollama Modell für Telefonie'),
+    ('llm_model',            'ministral-3:14b-instruct-2512-q8_0',  'Ollama Modell für Telefonie'),
     ('llm_temperature',      '0.1',                 'Temperature (0.0–1.0)'),
     ('llm_top_p',            '0.85',                'Top-P (0.0–1.0)'),
     ('llm_num_predict',      '80',                  'Max. Tokens pro Antwort'),

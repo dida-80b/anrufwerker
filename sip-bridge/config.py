@@ -89,7 +89,7 @@ PROCESS_BUFFERED_DURING_LLM = (
 # ============================================================
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434/api/chat")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3.5-tel:latest")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "ministral-3:14b-instruct-2512-q8_0")
 OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.1"))
 OLLAMA_TOP_P = float(os.getenv("OLLAMA_TOP_P", "0.85"))
 OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "24"))
