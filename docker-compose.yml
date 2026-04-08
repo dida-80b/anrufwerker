@@ -15,6 +15,28 @@ name: anrufwerker
 
 services:
 
+  # ── Piper TTS (Port 5150) ────────────────────────────────
+  piper:
+    build:
+      context: ./piper
+      dockerfile: Dockerfile
+    container_name: anrufwerker-piper
+    network_mode: host
+    volumes:
+      - ./data/piper-voices:/voices:ro
+    environment:
+      - VOICES_DIR=/voices
+      - DEFAULT_VOICE=${PIPER_VOICE:-de_DE-thorsten-high}
+      - PORT=5150
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5150/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
   # ── SIP Bridge ───────────────────────────────────────────
   sip-bridge:
     build:
@@ -66,7 +88,7 @@ services:
       - OPENCLAW_CHAT_TOKEN=${OPENCLAW_CHAT_TOKEN:-}
       - OLLAMA_DIRECT=${OLLAMA_DIRECT:-false}
       - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434/api/chat}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3.5-tel:latest}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
       - INACTIVITY_TIMEOUT=${INACTIVITY_TIMEOUT:-90}
       - CHECKIN_TIMEOUT=${CHECKIN_TIMEOUT:-10}
       - FAST_STT_MODEL=${FAST_STT_MODEL:-small}
@@ -87,7 +109,7 @@ services:
       - OLLAMA_REPEAT_PENALTY=${OLLAMA_REPEAT_PENALTY:-1.2}
       - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-2048}
       - INBOUND_ENABLED=${INBOUND_ENABLED:-true}
-      - COMPANY_CONFIG=${COMPANY_CONFIG:-/app/configs/malerbetrieb_dannerbeck.json}
+      - COMPANY_CONFIG=${COMPANY_CONFIG:-}
       - ASYNC_WORKER_QUEUE_DSN=${ASYNC_WORKER_QUEUE_DSN:-/app/data/queue.db}
       - ASYNC_WORKER_DISABLED=${ASYNC_WORKER_DISABLED:-false}
       - DASHBOARD_DSN=/app/data/dashboard.db
@@ -107,7 +129,7 @@ services:
       - QUEUE_DSN=/app/data/queue.db
       - DASHBOARD_DSN=/app/data/dashboard.db
       - OLLAMA_URL=${OLLAMA_URL:-http://127.0.0.1:11434/api/chat}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral-small3.1:latest}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - POLL_INTERVAL_SECONDS=${POLL_INTERVAL_SECONDS:-10}
     restart: unless-stopped

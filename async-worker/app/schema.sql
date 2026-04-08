@@ -312,13 +312,8 @@ INSERT OR IGNORE INTO settings (key, value, description) VALUES
     ('company_bot_cannot',        'preise_verhandeln,beschwerden,rechtliches',     'Bot-Grenzen (kommagetrennt)');
 
 INSERT OR IGNORE INTO settings (key, value, description) VALUES
-    ('tts_engine',                  'kokoro',                    'TTS-Engine für Telefonie'),
-    ('tts_voice',                   'de-DE-SeraphinaMultilingualNeural', 'Edge-TTS Stimme'),
-    ('kokoro_url',                  'http://127.0.0.1:5151',    'Kokoro HTTP URL'),
-    ('kokoro_voice',                'af_heart',                 'Kokoro Voice'),
-    ('kokoro_lang',                 'de',                       'Kokoro Sprache'),
-    ('kokoro_german_url',           'http://127.0.0.1:8880',    'Kokoro-German URL'),
-    ('kokoro_german_voice',         'df_eva',                   'Kokoro-German Voice'),
+    ('tts_engine',                  'piper',                     'TTS-Engine für Telefonie (piper oder edge)'),
+    ('tts_voice',                   'de-DE-SeraphinaMultilingualNeural', 'Edge-TTS Stimme (nur bei engine=edge)'),
     ('piper_url',                   'http://127.0.0.1:5150',    'Piper HTTP URL'),
     ('piper_voice',                 'de_DE-thorsten-high',      'Piper Voice'),
     ('stt_engine',                  'whisper-http',             'STT-Engine'),
