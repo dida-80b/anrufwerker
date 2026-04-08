@@ -167,6 +167,12 @@ docker compose --profile monitoring up -d
 - Keine Weitergabe an externe Dienste (außer bei `TTS_ENGINE=edge`)
 - `data/transcripts/` und Datenbanken sind in `.gitignore` ausgeschlossen
 
+## Support & Security
+
+- Support: siehe `SUPPORT.md`
+- Beiträge: siehe `CONTRIBUTING.md`
+- Sicherheitsmeldungen: siehe `SECURITY.md`
+
 ---
 
 ## Lizenz
