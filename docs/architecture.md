@@ -8,8 +8,8 @@
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  ┌──────────────┐     ┌──────────────┐     ┌──────────────────────┐   │
-│  │  Asterisk    │────▶│  live-engine │────▶│  TTS (Antwort)       │   │
-│  │  / Fritzbox  │     │  (STT+LLM)   │     │  (eSpeak/silero)     │   │
+│  │  Asterisk    │────▶│  sip-bridge  │────▶│  TTS (Antwort)       │   │
+│  │  / Fritzbox  │     │  (STT+LLM)   │     │  (Piper TTS)         │   │
 │  └──────────────┘     └──────┬───────┘     └──────────────────────┘   │
 │                               │                                          │
 │                               ▼                                          │
@@ -35,15 +35,15 @@
 - **Fritzbox**: Consumer-Router mit Telefonie, CAPI over network
 - Anbindung via SIP/RTP oder Fritzbox CAPI
 
-### 2. live-engine (Core Service)
+### 2. sip-bridge (Core Service)
 
 **Verantwortung**: Echtzeit-Verarbeitung während des Anrufs
 
 **Aufgaben**:
-- STT (Speech-to-Text): Whisper.cpp oder Faster-Whisper
-- Intent/Slot Extraction: Kleines lokales Modell (qwen3.5:9b)
+- STT (Speech-to-Text): Whisper HTTP (whisper.cpp)
+- Intent/Slot Extraction: Lokales LLM via Ollama (qwen2.5:7b)
 - Response Generation: Kontextbezogene Antwort
-- TTS: Silero oder eSpeak für Ausgabe
+- TTS: Piper (lokal) oder Edge TTS (online)
 
 **Anforderungen**:
 - Latenz: < 3s Ende-zu-Ende
@@ -146,7 +146,7 @@ class CrmAdapter(Protocol):
 
 ```
 1. Anruf kommt rein (Asterisk/Fritzbox)
-2. SIP Invite → live-engine
+2. SIP Invite → sip-bridge
 3. Audio → STT → Transcript
 4. Transcript → Intent Detection (LLM)
 5. Slots extrahieren
@@ -210,7 +210,7 @@ Umschaltung via `OPENCLAW_ENABLED=true/false` env var.
 1. API bekommt Mission (to + task)
 2. Outbound-Policy prüft Erlaubnis
 3. Asterisk startet Anruf
-4. live-engine führt kurzen mission-basierten Dialog
+4. sip-bridge führt kurzen mission-basierten Dialog
 5. Ergebnis -> Queue (direction=outbound)
 6. Async Worker verarbeitet Follow-up
 ```

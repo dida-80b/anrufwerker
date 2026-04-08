@@ -19,9 +19,9 @@ Funktionierender Demo-System mit Basisfähigkeiten.
 
 - [ ] Asterisk-Anbindung (SIP/RTP)
 - [ ] STT (Faster-Whisper)
-- [ ] Intent Detection (qwen3.5:9b via Host-Ollama)
+- [ ] Intent Detection (qwen2.5:7b via Host-Ollama)
 - [ ] Kurze Text-Antworten generieren
-- [ ] TTS (Silero)
+- [ ] TTS (Piper)
 - [ ] SQLite Queue
 - [ ] Async Worker für Contact-Log
 - [ ] Basis-Konfiguration via JSON/env
@@ -30,7 +30,7 @@ Funktionierender Demo-System mit Basisfähigkeiten.
 ### Deliverables
 
 - docker-compose.yml mit allen Services
-- live-engine API (POST /process-audio-stream)
+- sip-bridge AudioSocket-Handler
 - Worker-Job-Verarbeitung
 - Tenant-Konfiguration (JSON)
 - Transcripts-Speicherung

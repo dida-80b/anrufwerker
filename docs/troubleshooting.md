@@ -1,4 +1,4 @@
-# Troubleshooting Guide
+# Troubleshooting
 
 ## Port-Konflikte
 
@@ -9,19 +9,15 @@ Error: bind: address already in use
 
 ### Diagnose
 ```bash
-# Prüfe welche Ports belegt sind
-ss -tlnp | grep -E '18080|18081|5060|8088'
-# oder
-netstat -tlnp | grep -E '18080|18081|5060|8088'
+ss -tlnp | grep -E '5003|5150|8083|8087|9093|5060|8088'
 ```
 
 ### Lösung
-1. Identify blocking process: `lsof -i :18080`
-2. Stop blocking service or change port in `.env`:
-   ```bash
-   LIVE_ENGINE_PORT=18081
-   ASYNC_WORKER_PORT=18082
-   ```
+Belegenden Prozess identifizieren und beenden, oder Port in `.env` überschreiben:
+```bash
+BRIDGE_PORT=5004
+AUDIOSOCKET_PORT=9094
+```
 
 ---
 
@@ -29,37 +25,22 @@ netstat -tlnp | grep -E '18080|18081|5060|8088'
 
 ### Symptom
 ```
- Asterisk ARI unreachable (HTTP 401)
+Asterisk ARI unreachable (HTTP 401)
 ```
 
 ### Diagnose
 ```bash
-# Test ARI manually
-curl -u openclaw:YOUR_PASSWORD http://asterisk:8088/ari/asterisk/info
+curl -u $ASTERISK_ARI_USER:$ASTERISK_ARI_PASSWORD \
+  http://localhost:8088/ari/asterisk/info
 ```
 
 ### Lösung
-1. Set password in `.env`:
-   ```
-   ASTERISK_ARI_PASSWORD=your_secure_password
-   ```
-2. Ensure Asterisk ARI user exists in `asterisk/etc/asterisk/http.conf`:
-   ```
-   [general]
-   enabled=yes
-   bindport=8088
-   bindaddr=0.0.0.0
-   
-   [openclaw]
-   type=user
-   password=your_secure_password
-   read=all
-   write=all
-   ```
+1. `.env` prüfen — `ASTERISK_ARI_USER` und `ASTERISK_ARI_PASSWORD` müssen mit `asterisk/etc/ari.conf` übereinstimmen
+2. Asterisk neu starten: `docker compose restart asterisk`
 
 ---
 
-## host.docker.internal
+## Ollama nicht erreichbar
 
 ### Symptom
 ```
@@ -68,44 +49,21 @@ connection refused: Ollama not reachable
 
 ### Diagnose
 ```bash
-# Test from inside container
-docker exec anrufwerker-live-engine curl -f http://host.docker.internal:11434/api/tags
+# Auf Host testen
+curl http://localhost:11434/api/tags
+
+# Aus Container testen
+docker exec anrufwerker-sip-bridge curl -f http://host.docker.internal:11434/api/tags
 ```
 
-### Ursachen & Lösungen
-
-1. **Linux**: `extra_hosts` erforderlich (bereits in compose.yml)
-   ```yaml
-   extra_hosts:
-     - "host.docker.internal:host-gateway"
-   ```
-
-2. **Ollama nicht auf Host gestartet**:
-   ```bash
-   # Auf Host starten
-   ollama serve
-   # Oder als Service
-   sudo systemctl enable ollama
-   ```
-
-3. **Ollama Port anders als 11434**:
-   ```bash
-   # Prüfen
-   curl http://localhost:11434/api/tags
-   
-   # Anpassen in .env
-   OLLAMA_HOST=http://host.docker.internal:11434
-   ```
-
-4. **Firewall blockiert**:
-   ```bash
-   # Linux: Firewall prüfen
-   sudo ufw allow 11434/tcp
-   ```
+### Lösung
+1. Ollama auf Host starten: `ollama serve`
+2. Modell prüfen: `ollama list` — Modell aus `.env OLLAMA_MODEL` muss vorhanden sein
+3. Auf Linux: `extra_hosts: host.docker.internal:host-gateway` ist bereits in compose.yml gesetzt
 
 ---
 
-## Asterisk Erreichbarkeit
+## Asterisk nicht erreichbar
 
 ### Symptom
 ```
@@ -114,46 +72,83 @@ Error: connect: connection refused
 
 ### Diagnose
 ```bash
-# Prüfe ob Asterisk läuft
 docker ps | grep asterisk
-
-# Test ARI von Host
-curl -u openclaw:pass http://localhost:8088/ari/asterisk/info
-
-# Test aus Container
-docker exec anrufwerker-live-engine curl -f http://asterisk:8088/ari/asterisk/info
+docker exec anrufwerker-asterisk asterisk -rx "pjsip show endpoints"
 ```
 
 ### Lösung
-1. Starte Asterisk: `docker compose up -d asterisk`
-2. Prüfe Port 5060/UDP frei
-3. Prüfe Asterisk Config in `asterisk/etc/`
+```bash
+# Standalone-Profil startet eigenen Asterisk
+docker compose --profile standalone up -d asterisk
+
+# Oder externen Asterisk konfigurieren
+# ASTERISK_HOST in .env auf IP des Asterisk-Servers setzen
+```
 
 ---
 
-## Preflight-Check Fehler
+## Piper antwortet nicht
 
-### Testausführung
+### Symptom
+```
+piper /health unreachable
+```
+
+### Diagnose
 ```bash
-# Vollständiger Preflight
+curl http://localhost:5150/health
+docker logs anrufwerker-piper
+```
+
+### Lösung
+1. Piper-Voice vorhanden? `ls data/piper-voices/`
+2. Voice-Datei herunterladen (siehe README Quickstart)
+3. `docker compose restart piper`
+
+---
+
+## TTS klingt falsch / kein Audio
+
+### Diagnose
+```bash
+# Piper direkt testen
+curl -s -X POST http://localhost:5150/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Test", "voice": "de_DE-thorsten-high"}' \
+  --output /tmp/test.wav && aplay /tmp/test.wav
+
+# Verfügbare Stimmen anzeigen
+curl http://localhost:5150/voices
+```
+
+### Lösung
+`PIPER_VOICE` in `.env` muss exakt dem Dateinamen ohne `.onnx` entsprechen.
+
+---
+
+## Whisper nicht erreichbar
+
+### Diagnose
+```bash
+curl http://localhost:8090/health   # externe Whisper-Instanz
+curl http://localhost:8091/health   # standalone-Profil
+```
+
+### Lösung
+- `WHISPER_URL` in `.env` auf laufende Whisper-Instanz zeigen lassen
+- Standalone starten: `docker compose --profile standalone up -d whisper-gpu`
+
+---
+
+## Preflight-Check
+
+```bash
 make preflight
-
-# Nur Compose-Prüfung
-make check
-
-# Manuell
+# oder
 ./scripts/preflight.sh
 ```
 
-### Exit-Codes
-- `0`: Alle Checks bestanden
-- `1`: Ein oder mehr Checks fehlgeschlagen
-
-### Logs
-- Build: `/tmp/anrufwerker_build.log`
-- Up: `/tmp/anrufwerker_up.log`
-- Health: `/tmp/anrufwerker_*_health.json`
-- ARI: `/tmp/anrufwerker_ari_probe.txt`
+Exit-Codes: `0` = OK, `1` = Fehler
 
 ---
 
@@ -161,14 +156,10 @@ make check
 
 - [ ] `make preflight` → Exit 0
 - [ ] `docker compose ps` → alle Services "Up"
-- [ ] Health-Endpoints respondieren:
-  - `curl http://localhost:18080/health` → `{"ok":true}`
-  - `curl http://localhost:18081/health` → `{"ok":true}`
-- [ ] ARI erreichbar: `curl -u openclaw:pass http://asterisk:8088/ari/asterisk/info`
-- [ ] Ollama auf Host: `curl http://localhost:11434/api/tags`
-- [ ] Outbound-Call Test (optional):
-  ```bash
-  curl -X POST http://localhost:18080/outbound/call \
-    -H 'Content-Type: application/json' \
-    -d '{"to":"+491701234567","mission":"Test","mission_type":"test"}'
-  ```
+- [ ] Health-Endpoints:
+  - `curl http://localhost:8083/health` → Dashboard
+  - `curl http://localhost:8087/health` → Async-Worker
+  - `curl http://localhost:5150/health` → Piper TTS
+- [ ] Ollama: `curl http://localhost:11434/api/tags`
+- [ ] Asterisk ARI: `curl -u $ASTERISK_ARI_USER:$ASTERISK_ARI_PASSWORD http://localhost:8088/ari/asterisk/info`
+- [ ] Dashboard öffnen: `http://localhost:8083` → Login → Firmendaten eintragen

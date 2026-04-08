@@ -66,14 +66,14 @@ Dieses Dokument definiert das Latenz-Budget für alle Komponenten im Live-Call-P
 
 | Modell | Latenz (approx) |
 |--------|-----------------|
-| qwen3.5:9b (Q4) | 600-1200ms |
-| qwen3.5:9b (Q4) | 400-800ms |
+| qwen2.5:7b (Q4) | 600-1200ms |
+| qwen2.5:7b (Q4) | 400-800ms |
 | mistral:7b | 700-1500ms |
 
 **Budget**: 800ms
 
 **Optimierung**:
-- `qwen3.5:9b` für schnelle Antworten
+- `qwen2.5:7b` für schnelle Antworten
 - Prompt-Engineering für kurze Outputs
 - Keine externen API-Calls (lokales Modell)
 - Max Tokens: 50-100 (nicht mehr)
@@ -82,9 +82,8 @@ Dieses Dokument definiert das Latenz-Budget für alle Komponenten im Live-Call-P
 
 | Modell | Latenz (approx) |
 |--------|-----------------|
-| Silero (ONNX) | 100-200ms |
-| eSpeak-ng | 50-100ms |
-| Coqui | 300-500ms |
+| Piper (ONNX) | 100-300ms |
+| Edge TTS (online) | 300-600ms |
 
 **Budget**: 400ms
 
@@ -149,8 +148,8 @@ latency_total_seconds_bucket{le="3"}
 
 | ENV | Beschreibung | Default |
 |-----|--------------|---------|
-| `STT_MODEL` | STT-Modell | `small` |
-| `LLM_MODEL` | LLM-Modell | `qwen3.5:9b` |
-| `LLM_MAX_TOKENS` | Max Tokens für Response | `80` |
-| `TTS_MODEL` | TTS-Modell | `silero` |
-| `AUDIO_BUFFER_MS` | Audio Buffer | `200` |
+| `FAST_STT_MODEL` | Whisper Modell | `small` |
+| `OLLAMA_MODEL` | LLM-Modell | `qwen2.5:7b` |
+| `OLLAMA_NUM_PREDICT` | Max Tokens für Response | `80` |
+| `PIPER_VOICE` | Piper Voice | `de_DE-thorsten-high` |
+| `VAD_SILENCE_FRAMES_TO_END` | Stille-Frames bis Turn-Ende | `12` |

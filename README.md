@@ -38,7 +38,7 @@ Anrufer → Asterisk → SIP-Bridge → Whisper (STT) → Ollama (LLM) → Piper
 
 ```bash
 # 1. Repository klonen
-git clone https://github.com/dein-user/anrufwerker.git
+git clone git@github.com:dida-80b/anrufwerker.git
 cd anrufwerker
 
 # 2. Environment konfigurieren
