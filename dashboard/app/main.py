@@ -574,7 +574,6 @@ async def login_page(request: Request, next: str = "/", error: str = "", seeded:
             "error": error,
             "seeded": seeded == "1",
             "default_admin_email": DEFAULT_ADMIN_EMAIL,
-            "default_admin_password": DEFAULT_ADMIN_PASSWORD,
         },
     )
 

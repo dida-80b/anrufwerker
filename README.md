@@ -171,4 +171,4 @@ docker compose --profile monitoring up -d
 
 ## Lizenz
 
-MIT
+AGPL-3.0
