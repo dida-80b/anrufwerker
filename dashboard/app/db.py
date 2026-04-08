@@ -9,6 +9,7 @@ SCHEMA_PATH = Path(__file__).parent.parent / "schema.sql"
 DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@anrufwerker.local")
 DEFAULT_ADMIN_NAME = os.getenv("DEFAULT_ADMIN_NAME", "Administrator")
 DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "anrufwerker-start")
+DEFAULT_UI_LOCALE = "en"
 
 
 def db() -> sqlite3.Connection:
@@ -47,6 +48,7 @@ def _migrate_users_table(conn: sqlite3.Connection) -> None:
         or "read_only" in table_sql
         or "must_change_password" not in table_info
         or "password_changed_at" not in table_info
+        or "ui_locale" not in table_info
     )
     if not needs_rebuild:
         return
@@ -60,6 +62,7 @@ def _migrate_users_table(conn: sqlite3.Connection) -> None:
             email                 TEXT NOT NULL,
             display_name          TEXT NOT NULL,
             password_hash         TEXT,
+            ui_locale             TEXT NOT NULL DEFAULT 'en',
             role                  TEXT NOT NULL DEFAULT 'user'
                                       CHECK (role IN ('admin', 'user', 'viewer')),
             is_active             INTEGER NOT NULL DEFAULT 1,
@@ -74,7 +77,7 @@ def _migrate_users_table(conn: sqlite3.Connection) -> None:
         );
 
         INSERT INTO users_new (
-            id, tenant_id, email, display_name, password_hash, role, is_active,
+            id, tenant_id, email, display_name, password_hash, ui_locale, role, is_active,
             must_change_password, created_at, last_login_at, password_changed_at,
             oidc_sub, oidc_issuer
         )
@@ -84,6 +87,7 @@ def _migrate_users_table(conn: sqlite3.Connection) -> None:
             email,
             display_name,
             password_hash,
+            'en',
             CASE
                 WHEN role = 'office' THEN 'user'
                 WHEN role = 'read_only' THEN 'viewer'
@@ -127,16 +131,17 @@ def _ensure_bootstrap(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
         INSERT INTO users (
-            tenant_id, email, display_name, password_hash, role,
+            tenant_id, email, display_name, password_hash, ui_locale, role,
             is_active, must_change_password, password_changed_at
         )
-        VALUES (?, ?, ?, ?, 'admin', 1, 1, NULL)
+        VALUES (?, ?, ?, ?, ?, 'admin', 1, 1, NULL)
         """,
         (
             tenant_id,
             DEFAULT_ADMIN_EMAIL.lower(),
             DEFAULT_ADMIN_NAME,
             _hash_password(DEFAULT_ADMIN_PASSWORD),
+            DEFAULT_UI_LOCALE,
         ),
     )
 

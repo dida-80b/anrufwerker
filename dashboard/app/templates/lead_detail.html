@@ -1,26 +1,24 @@
 {% extends "base.html" %}
-{% block title %}{{ lead.caller_name or "Lead" }} — Anrufwerker{% endblock %}
+{% block title %}{{ lead.caller_name or t.table_lead }} — Anrufwerker{% endblock %}
 
 {% block content %}
 <div class="breadcrumb">
   <a href="/">Inbox</a>
   <span>›</span>
-  <span>{{ lead.caller_name or "Unknown" }}</span>
+  <span>{{ lead.caller_name or t.lead_unknown }}</span>
 </div>
 
 <section class="hero">
   <div>
-    <div class="eyebrow">Lead Details</div>
-    <h1>{{ lead.caller_name or "Unknown" }}</h1>
-    <p>{{ lead.description or "No request extracted." }}</p>
+    <div class="eyebrow">{{ t.lead_details_eyebrow }}</div>
+    <h1>{{ lead.caller_name or t.lead_unknown }}</h1>
+    <p>{{ lead.description or t.lead_no_request ~ "." }}</p>
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-    <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ dict(statuses).get(lead.status, lead.status) }}</span>
-    <span class="badge" data-color="{{ urgency_colors.get(lead.urgency, 'slate') }}">
-      {% if lead.urgency == "normal" %}Normal{% elif lead.urgency == "urgent" %}Urgent{% else %}Emergency{% endif %}
-    </span>
+    <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ status_labels.get(lead.status, lead.status) }}</span>
+    <span class="badge" data-color="{{ urgency_colors.get(lead.urgency, 'slate') }}">{{ urgency_labels.get(lead.urgency, lead.urgency) }}</span>
     {% if lead.needs_manual_review %}
-    <span class="badge" data-color="orange">Review</span>
+    <span class="badge" data-color="orange">{{ t.stats_review }}</span>
     {% endif %}
   </div>
 </section>
@@ -28,25 +26,25 @@
 <div class="detail-grid">
   <div class="detail-stack">
     <article>
-      <h3>Contact & Request</h3>
+      <h3>{{ t.lead_contact_request }}</h3>
       <div class="field-grid">
-        <div class="field"><label>Phone</label><div class="mono">{{ lead.caller_phone_raw or "—" }}</div></div>
+        <div class="field"><label>{{ t.label_phone }}</label><div class="mono">{{ lead.caller_phone_raw or "—" }}</div></div>
         <div class="field"><label>E.164</label><div class="mono">{{ lead.caller_phone_e164 or "—" }}</div></div>
-        <div class="field"><label>Street</label><div>{{ lead.address_street or "—" }}</div></div>
-        <div class="field"><label>City</label><div>{{ lead.address_city or "—" }}{% if lead.address_plz %} {{ lead.address_plz }}{% endif %}</div></div>
-        <div class="field"><label>Company</label><div>{{ lead.tenant_name or "—" }}</div></div>
-        <div class="field"><label>Confidence</label><div>{% if lead.extraction_confidence is not none %}{{ (lead.extraction_confidence * 100) | int }}%{% else %}—{% endif %}</div></div>
-        <div class="field"><label>Created</label><div class="mono">{{ lead.created_fmt }}</div></div>
-        <div class="field"><label>Updated</label><div class="mono">{{ lead.updated_fmt }}</div></div>
+        <div class="field"><label>{{ t.label_street }}</label><div>{{ lead.address_street or "—" }}</div></div>
+        <div class="field"><label>{{ t.label_city }}</label><div>{{ lead.address_city or "—" }}{% if lead.address_plz %} {{ lead.address_plz }}{% endif %}</div></div>
+        <div class="field"><label>{{ t.label_company }}</label><div>{{ lead.tenant_name or "—" }}</div></div>
+        <div class="field"><label>{{ t.label_confidence }}</label><div>{% if lead.extraction_confidence is not none %}{{ (lead.extraction_confidence * 100) | int }}%{% else %}—{% endif %}</div></div>
+        <div class="field"><label>{{ t.label_created }}</label><div class="mono">{{ lead.created_fmt }}</div></div>
+        <div class="field"><label>{{ t.label_updated }}</label><div class="mono">{{ lead.updated_fmt }}</div></div>
       </div>
 
       {% if lead.missing_fields_list %}
-      <div class="alert warning" style="margin-top:14px;">Missing fields: {{ lead.missing_fields_list | join(", ") }}</div>
+      <div class="alert warning" style="margin-top:14px;">{{ t.lead_missing_fields.format(fields=lead.missing_fields_list | join(", ")) }}</div>
       {% endif %}
 
       {% if lead.notes %}
       <div class="field" style="margin-top:14px;">
-        <label>Notes</label>
+        <label>{{ t.label_notes }}</label>
         <div style="white-space:pre-line;">{{ lead.notes }}</div>
       </div>
       {% endif %}
@@ -58,7 +56,7 @@
         <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line);">
           <div>
             <strong style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">
-              Call{% if call.is_origin %} · Origin{% endif %}
+              {{ t.lead_call }}{% if call.is_origin %} · {{ t.lead_origin }}{% endif %}
             </strong>
             <div class="hint" style="margin-top:3px;">{{ call.started_fmt }} · {{ call.direction }}{% if call.duration_seconds %} · {{ call.duration_seconds }}s{% endif %} · {{ call.turn_count }} Turns</div>
           </div>
@@ -68,12 +66,12 @@
           {% if call.messages %}
             {% for msg in call.messages %}
             <div class="msg {{ msg.role }}">
-              <div class="role">{% if msg.role == "assistant" %}Bot{% else %}Caller{% endif %}</div>
+              <div class="role">{% if msg.role == "assistant" %}Bot{% else %}{{ t.lead_caller }}{% endif %}</div>
               <div>{{ msg.content }}</div>
             </div>
             {% endfor %}
           {% else %}
-          <div class="empty-state" style="padding:20px;">No transcript available.</div>
+          <div class="empty-state" style="padding:20px;">{{ t.lead_no_transcript }}</div>
           {% endif %}
         </div>
       </article>
@@ -83,9 +81,9 @@
 
   <div class="detail-stack">
     <article>
-      <h3>Status</h3>
+      <h3>{{ t.label_status }}</h3>
       <div id="status-badge-{{ lead.id }}" class="status-badge-wrap" style="margin-bottom:12px;">
-        <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ dict(statuses).get(lead.status, lead.status) }}</span>
+        <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ status_labels.get(lead.status, lead.status) }}</span>
       </div>
       {% if can_edit %}
       <form class="status-form"
@@ -94,18 +92,18 @@
             hx-swap="outerHTML">
         <select name="status">
           {% for s, lbl in statuses %}
-          <option value="{{ s }}" {% if s == lead.status %}selected{% endif %}>{{ lbl }}</option>
+          <option value="{{ s }}" {% if s == lead.status %}selected{% endif %}>{{ status_labels.get(s, s) }}</option>
           {% endfor %}
         </select>
-        <button type="submit">Set</button>
+        <button type="submit">{{ t.button_set }}</button>
       </form>
       {% else %}
-      <div class="hint">Only Users and Admins can update leads.</div>
+      <div class="hint">{{ t.lead_only_users_admin }}</div>
       {% endif %}
     </article>
 
     <article>
-      <h3>History</h3>
+      <h3>{{ t.lead_history }}</h3>
       <div id="notes-panel">
         {% if events %}
         <ul class="timeline">
@@ -115,9 +113,9 @@
             <strong style="font-size:0.84rem;">{{ ev.actor_id or "system" }}</strong>
             <span style="font-size:0.84rem;">
               {% if ev.event_type == "note_added" %}
-                Note: {{ ev.new_value }}
+                {{ t.timeline_note.format(value=ev.new_value) }}
               {% elif ev.event_type == "status_changed" %}
-                → {{ dict(statuses).get(ev.new_value, ev.new_value) }}
+                → {{ status_labels.get(ev.new_value, ev.new_value) }}
               {% else %}
                 {{ ev.event_type }}{% if ev.new_value %}: {{ ev.new_value }}{% endif %}
               {% endif %}
@@ -126,7 +124,7 @@
           {% endfor %}
         </ul>
         {% else %}
-        <div class="empty-state" style="padding:20px;">No history yet.</div>
+        <div class="empty-state" style="padding:20px;">{{ t.lead_no_history }}</div>
         {% endif %}
 
         {% if can_edit %}
@@ -136,7 +134,7 @@
               hx-swap="innerHTML"
               hx-on::after-request="this.reset()"
               style="margin-top:12px;">
-          <input type="text" name="note" placeholder="Add note..." autocomplete="off">
+          <input type="text" name="note" placeholder="{{ t.lead_add_note }}" autocomplete="off">
           <button type="submit">+</button>
         </form>
         {% endif %}

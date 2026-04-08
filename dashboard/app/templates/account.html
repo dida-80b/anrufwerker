@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Account — Anrufwerker{% endblock %}
+{% block title %}{{ t.nav_account }} — Anrufwerker{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div>
-    <div class="eyebrow">Access</div>
-    <h1>Account & Password</h1>
-    <p>Manage the password for the current user. A forced password change is active after first setup.</p>
+    <div class="eyebrow">{{ t.account_eyebrow }}</div>
+    <h1>{{ t.account_title }}</h1>
+    <p>{{ t.account_intro }}</p>
   </div>
 </section>
 
 {% if forced %}
-<div class="alert warning">This account must set a new password before it can be used further.</div>
+<div class="alert warning">{{ t.account_forced }}</div>
 {% endif %}
 {% if saved %}
-<div class="alert success">Password updated.</div>
+<div class="alert success">{{ t.account_saved }}</div>
 {% endif %}
 {% if error %}
 <div class="alert error">{{ error }}</div>
@@ -22,31 +22,47 @@
 
 <div class="detail-grid">
   <article class="detail-card">
-    <h3 style="margin-top:0;">Active User</h3>
+    <h3 style="margin-top:0;">{{ t.account_active_user }}</h3>
     <div class="field-grid">
-      <div class="field"><label>Name</label><div>{{ current_user.display_name }}</div></div>
-      <div class="field"><label>Email</label><div>{{ current_user.email }}</div></div>
-      <div class="field"><label>Role</label><div>{{ role_labels[current_user.role] }}</div></div>
-      <div class="field"><label>Tenant</label><div>{{ current_user.tenant_name or "—" }}</div></div>
+      <div class="field"><label>{{ t.label_name }}</label><div>{{ current_user.display_name }}</div></div>
+      <div class="field"><label>{{ t.label_email }}</label><div>{{ current_user.email }}</div></div>
+      <div class="field"><label>{{ t.label_role }}</label><div>{{ role_labels[current_user.role] }}</div></div>
+      <div class="field"><label>{{ t.label_tenant }}</label><div>{{ current_user.tenant_name or "—" }}</div></div>
     </div>
   </article>
 
   <article class="detail-card">
-    <h3 style="margin-top:0;">Change Password</h3>
+    <h3 style="margin-top:0;">{{ t.account_change_password }}</h3>
     <form method="post" action="/account/password" class="layout-grid">
       <label>
-        <div style="font-weight:800;margin-bottom:8px;">Current Password</div>
+        <div style="font-weight:800;margin-bottom:8px;">{{ t.account_current_password }}</div>
         <input type="password" name="current_password" autocomplete="current-password">
       </label>
       <label>
-        <div style="font-weight:800;margin-bottom:8px;">New Password</div>
+        <div style="font-weight:800;margin-bottom:8px;">{{ t.account_new_password }}</div>
         <input type="password" name="new_password" autocomplete="new-password">
       </label>
       <label>
-        <div style="font-weight:800;margin-bottom:8px;">Confirm New Password</div>
+        <div style="font-weight:800;margin-bottom:8px;">{{ t.account_confirm_password }}</div>
         <input type="password" name="confirm_password" autocomplete="new-password">
       </label>
-      <button type="submit">Save Password</button>
+      <button type="submit">{{ t.button_save_password }}</button>
+    </form>
+  </article>
+
+  <article class="detail-card">
+    <h3 style="margin-top:0;">{{ t.account_ui_language }}</h3>
+    <p class="hint">{{ t.account_ui_language_help }}</p>
+    <form method="post" action="/account/locale" class="layout-grid">
+      <label>
+        <div style="font-weight:800;margin-bottom:8px;">{{ t.label_language }}</div>
+        <select name="ui_locale">
+          {% for item in ui_locales %}
+          <option value="{{ item.value }}" {% if item.value == ui_locale %}selected{% endif %}>{{ item.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">{{ t.button_save }}</button>
     </form>
   </article>
 </div>

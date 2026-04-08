@@ -5,19 +5,19 @@
 
   <section class="stats-grid">
     <a href="/" class="stats-card {% if not active_filter %}active{% endif %}">
-      <div class="stats-label"><span>Total</span><span>All</span></div>
+      <div class="stats-label"><span>{{ t.stats_total }}</span><span>{{ t.stats_all }}</span></div>
       <div class="stats-value">{{ stats.total }}</div>
     </a>
     <a href="/?status=needs_review" class="stats-card {% if active_filter == 'needs_review' %}active{% endif %}">
-      <div class="stats-label"><span>Review</span><span>Manual</span></div>
+      <div class="stats-label"><span>{{ t.stats_review }}</span><span>{{ t.stats_manual }}</span></div>
       <div class="stats-value">{{ highlights.review }}</div>
     </a>
     <a href="/?status=callback_open" class="stats-card {% if active_filter == 'callback_open' %}active{% endif %}">
-      <div class="stats-label"><span>Open</span><span>Callback</span></div>
+      <div class="stats-label"><span>{{ t.stats_open }}</span><span>{{ t.stats_callback }}</span></div>
       <div class="stats-value">{{ stats.callback_open }}</div>
     </a>
     <div class="stats-card">
-      <div class="stats-label"><span>Today</span><span>Current</span></div>
+      <div class="stats-label"><span>{{ t.stats_today }}</span><span>{{ t.stats_current }}</span></div>
       <div class="stats-value">{{ highlights.today }}</div>
     </div>
   </section>
@@ -26,18 +26,18 @@
     <div class="toolbar">
       <form class="search-form" method="get" action="/">
         {% if active_filter %}<input type="hidden" name="status" value="{{ active_filter }}">{% endif %}
-        <input type="text" name="q" value="{{ query }}" placeholder="Search by name, city, phone number, or request">
-        <button type="submit">Filter</button>
+        <input type="text" name="q" value="{{ query }}" placeholder="{{ t.search_placeholder }}">
+        <button type="submit">{{ t.button_filter }}</button>
         {% if query or active_filter %}
-        <a class="ghost-button" href="/">Reset</a>
+        <a class="ghost-button" href="/">{{ t.button_reset }}</a>
         {% endif %}
       </form>
     </div>
 
     <div class="pill-row">
-      <a href="{% if query %}/?q={{ query|urlencode }}{% else %}/{% endif %}" class="pill {% if not active_filter %}active{% endif %}">All</a>
+      <a href="{% if query %}/?q={{ query|urlencode }}{% else %}/{% endif %}" class="pill {% if not active_filter %}active{% endif %}">{{ t.stats_all }}</a>
       {% for status, label in statuses %}
-      <a href="/?status={{ status }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pill {% if active_filter == status %}active{% endif %}">{{ label }}</a>
+      <a href="/?status={{ status }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pill {% if active_filter == status %}active{% endif %}">{{ status_labels[status] }}</a>
       {% endfor %}
     </div>
 
@@ -46,13 +46,13 @@
       <table>
         <thead>
           <tr>
-            <th>Time</th>
-            <th>Lead</th>
-            <th>Phone</th>
-            <th>City</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Updated</th>
+            <th>{{ t.table_time }}</th>
+            <th>{{ t.table_lead }}</th>
+            <th>{{ t.table_phone }}</th>
+            <th>{{ t.table_city }}</th>
+            <th>{{ t.table_status }}</th>
+            <th>{{ t.table_priority }}</th>
+            <th>{{ t.table_updated }}</th>
           </tr>
         </thead>
         <tbody>
@@ -60,23 +60,21 @@
           <tr>
             <td class="mono">{{ lead.created_fmt }}</td>
             <td>
-              <a class="lead-link" href="/lead/{{ lead.id }}">{{ lead.caller_name or "Unknown" }}</a>
+              <a class="lead-link" href="/lead/{{ lead.id }}">{{ lead.caller_name or t.lead_unknown }}</a>
               <div class="lead-sub">
-                {{ lead.description or "No request extracted" }}
-                {% if lead.needs_manual_review %} · manual review{% endif %}
+                {{ lead.description or t.lead_no_request }}
+                {% if lead.needs_manual_review %} · {{ t.lead_manual_review }}{% endif %}
               </div>
             </td>
             <td class="mono">{{ lead.caller_phone_raw or "—" }}</td>
             <td>{{ lead.address_city or "—" }}{% if lead.address_plz %}<div class="lead-sub">{{ lead.address_plz }}</div>{% endif %}</td>
             <td>
               <span id="status-badge-{{ lead.id }}" class="status-badge-wrap">
-                <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ dict(statuses).get(lead.status, lead.status) }}</span>
+                <span class="badge" data-color="{{ status_colors.get(lead.status, 'slate') }}">{{ status_labels.get(lead.status, lead.status) }}</span>
               </span>
             </td>
             <td>
-              <span class="badge" data-color="{{ urgency_colors.get(lead.urgency, 'slate') }}">
-                {% if lead.urgency == "normal" %}Normal{% elif lead.urgency == "urgent" %}Urgent{% else %}Emergency{% endif %}
-              </span>
+              <span class="badge" data-color="{{ urgency_colors.get(lead.urgency, 'slate') }}">{{ urgency_labels.get(lead.urgency, lead.urgency) }}</span>
             </td>
             <td class="mono">{{ lead.updated_fmt }}</td>
           </tr>
@@ -85,7 +83,7 @@
       </table>
     </div>
     {% else %}
-    <div class="empty-state">No leads found. New leads will appear here automatically as soon as they arrive.</div>
+    <div class="empty-state">{{ t.lead_none_found }}</div>
     {% endif %}
   </section>
 </div>

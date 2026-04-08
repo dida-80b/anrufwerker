@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Inbox — Anrufwerker{% endblock %}
+{% block title %}{{ t.nav_inbox }} — Anrufwerker{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div>
-    <div class="eyebrow">Real-Time Leads</div>
-    <h1>Inbox for New Leads</h1>
-    <p>All incoming calls, callbacks, and manually reviewable cases in one clear workflow view.</p>
+    <div class="eyebrow">{{ t.inbox_eyebrow }}</div>
+    <h1>{{ t.inbox_title }}</h1>
+    <p>{{ t.inbox_intro }}</p>
   </div>
 </section>
 
