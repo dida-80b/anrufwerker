@@ -148,7 +148,7 @@ class AudioSocketServer:
         self.transcripts_dir = transcripts_dir
         self.inbound_prompt_fn = inbound_prompt_fn
         self.sessions: dict[str, AudioSocketSession] = {}
-        self._pending_missions: dict[str, str] = {}  # session_uuid → mission/content (str or dict)
+        self._pending_missions: dict[str, str | dict] = {}  # session_uuid → outbound mission (str) or inbound session dict
         self._server_sock: Optional[_socket_mod.socket] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
 

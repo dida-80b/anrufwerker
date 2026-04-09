@@ -76,22 +76,14 @@ services:
       - TTS_VOICE=${TTS_VOICE:-de-DE-SeraphinaMultilingualNeural}
       - PIPER_URL=${PIPER_URL:-http://127.0.0.1:5150}
       - PIPER_VOICE=${PIPER_VOICE:-de_DE-thorsten-high}
-      - OPENCLAW_INCOMING_WEBHOOK=${OPENCLAW_INCOMING_WEBHOOK:-}
       - FRITZBOX_PHONE_NUMBER=${FRITZBOX_PHONE_NUMBER:-}
       - AUDIOSOCKET_PORT=9093
-      - VOSK_MODEL_PATH=${VOSK_MODEL_PATH:-/models/vosk-model-de-0.21}
       - STT_ENGINE=${STT_ENGINE:-whisper-http}
       - WHISPER_URL=${WHISPER_URL:-http://127.0.0.1:8090}
-      - ALLOW_WHISPER_HTTP_FALLBACK=${ALLOW_WHISPER_HTTP_FALLBACK:-true}
-      - WHISPER_HTTP_PRIMARY=${WHISPER_HTTP_PRIMARY:-true}
-      - OPENCLAW_CHAT_URL=${OPENCLAW_CHAT_URL:-}
-      - OPENCLAW_CHAT_TOKEN=${OPENCLAW_CHAT_TOKEN:-}
-      - OLLAMA_DIRECT=${OLLAMA_DIRECT:-false}
       - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434/api/chat}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-ministral-3:14b-instruct-2512-q8_0}
       - INACTIVITY_TIMEOUT=${INACTIVITY_TIMEOUT:-90}
       - CHECKIN_TIMEOUT=${CHECKIN_TIMEOUT:-10}
-      - FAST_STT_MODEL=${FAST_STT_MODEL:-small}
       - VAD_SPEECH_FRAMES_TO_START=${VAD_SPEECH_FRAMES_TO_START:-2}
       - VAD_SILENCE_FRAMES_TO_END=${VAD_SILENCE_FRAMES_TO_END:-12}
       - VAD_RMS_THRESHOLD=${VAD_RMS_THRESHOLD:-260}
@@ -166,7 +158,7 @@ services:
     group_add:
       - "987"
     volumes:
-      - ~/.openclaw/models:/models:ro
+      - ./data/whisper-models:/models:ro
       - whisper_shader_cache:/root/.cache/mesa_shader_cache
     command:
       - whisper-server
