@@ -63,15 +63,14 @@ USER_ROLE_OPTIONS = [
 _SETTINGS_SECTIONS = [
     {
         "id": "speech",
-        "title": "Telephony / Speech",
-        "description": "TTS, STT and speech endpoints for live calls.",
+        "title": "Telefonie / Sprache",
+        "description": "TTS, STT und Sprach-Endpoints für Live-Anrufe.",
         "fields": [
-            ("tts_engine", "TTS Engine (piper / edge)", "text"),
-            ("tts_voice", "Edge-TTS Voice (only when engine=edge)", "text"),
-            ("piper_url", "Piper URL", "text"),
-            ("piper_voice", "Piper Voice", "text"),
-            ("stt_engine", "STT Engine", "text"),
-            ("whisper_url", "Whisper URL", "text"),
+            ("tts_engine", "TTS-Engine  (piper · edge)", "text"),
+            ("tts_url", "TTS-URL  (für piper und HTTP-kompatible Engines)", "text"),
+            ("tts_voice", "TTS-Stimme  (piper: de_DE-thorsten-high · edge: de-DE-SeraphinaMultilingualNeural)", "text"),
+            ("stt_engine", "STT-Engine  (whisper-http)", "text"),
+            ("whisper_url", "STT-URL  (Whisper HTTP)", "text"),
         ],
     },
     {

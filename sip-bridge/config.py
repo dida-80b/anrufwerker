@@ -40,8 +40,8 @@ FRITZBOX_SIP_USER = os.getenv("FRITZBOX_SIP_USER", "")
 # ============================================================
 
 TTS_ENGINE = os.getenv("TTS_ENGINE", "piper")   # "piper" (local) | "edge" (Microsoft Azure Neural)
-PIPER_VOICE = os.getenv("PIPER_VOICE", "de_DE-thorsten-high")
-PIPER_URL = os.getenv("PIPER_URL", "http://127.0.0.1:5150")
+TTS_URL = os.getenv("TTS_URL", os.getenv("PIPER_URL", "http://127.0.0.1:5150"))  # PIPER_URL als Fallback
+TTS_VOICE = os.getenv("TTS_VOICE", os.getenv("PIPER_VOICE", "de_DE-thorsten-high"))  # PIPER_VOICE als Fallback
 
 # ============================================================
 # AudioSocket

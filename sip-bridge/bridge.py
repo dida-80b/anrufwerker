@@ -54,7 +54,6 @@ from config import (
 )
 from llm import stream_response, build_system_prompt
 from settings import load_company_config, seed_from_config, seed_runtime_settings, seed_system_prompt
-from tts import text_to_asterisk_audio
 from audiosocket import AudioSocketServer
 
 logging.basicConfig(
@@ -202,7 +201,7 @@ async def handle_ari_event(event: Dict):
             "is_outbound": is_outbound,
             "caller": existing.get("caller", caller),
             "called": existing.get("called", called),
-            "webhook_url": existing.get("webhook_url", OPENCLAW_INCOMING),
+            "webhook_url": existing.get("webhook_url", ""),
             "playback_events": {},
         }
 
@@ -333,18 +332,6 @@ async def startup():
     )
     await audiosocket_server.start()
 
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "bridge:app",
-        host=os.getenv("BRIDGE_HOST", "0.0.0.0"),
-        port=BRIDGE_PORT,
-        log_level="info",
-        reload=False,
-        loop="asyncio",  # Disable uvloop: pure asyncio Transport.write() calls
-                         # sock.send() synchronously on empty buffer, ensuring
-                         # Asterisk's first recv() on its non-blocking socket succeeds.
-    )
 
 # ============================================================
 # REST Endpoints
@@ -562,3 +549,16 @@ async def audiosocket_status():
         "port": AUDIOSOCKET_PORT,
         "whisper_url": WHISPER_URL,
     }
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "bridge:app",
+        host=os.getenv("BRIDGE_HOST", "0.0.0.0"),
+        port=BRIDGE_PORT,
+        log_level="info",
+        reload=False,
+        loop="asyncio",  # Disable uvloop: pure asyncio Transport.write() calls
+                         # sock.send() synchronously on empty buffer, ensuring
+                         # Asterisk's first recv() on its non-blocking socket succeeds.
+    )
