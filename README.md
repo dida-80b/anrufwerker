@@ -138,8 +138,6 @@ Full reference: `.env.example`
 
 Business details (name, services, opening hours, etc.) are managed in the admin dashboard under **Settings → Company Data** — no JSON file required.
 
-Alternatively as a file: see the example at `docs/tenant.example.json`.
-
 ---
 
 ## Admin Dashboard
@@ -187,12 +185,6 @@ docker compose --profile monitoring up -d
 - Call data is stored locally in `data/transcripts/`
 - No data is sent to external services (unless `TTS_ENGINE=edge`)
 - `data/transcripts/` and databases are excluded from `.gitignore`
-
-## Support & Security
-
-- Support: see `SUPPORT.md`
-- Contributions: see `CONTRIBUTING.md`
-- Security reports: see `SECURITY.md`
 
 ---
 
