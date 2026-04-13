@@ -4,6 +4,8 @@ AI-powered phone answering system for small businesses — tradespeople, medical
 
 Answers calls, recognises caller intent, responds in real time, and queues tasks for follow-up. Runs entirely locally — no cloud required.
 
+![anrufwerker inbox](docs/screenshot.png)
+
 ---
 
 ## What the stack does
